@@ -2,6 +2,13 @@
 import { supabase } from '../lib/supabaseClient';
 import ExpenseList from './ExpenseList';
 
+interface Expense {
+  id: number;
+  amount: number;
+  description: string;
+  date: string;
+}
+
 export default async function Home() {
   // サーバーサイドで Supabase から支出データをフェッチ
   const { data: expenses, error } = await supabase
@@ -15,5 +22,5 @@ export default async function Home() {
   }
 
   // フェッチしたデータをクライアントコンポーネントに渡す
-  return <ExpenseList expenses={expenses} />;
+  return <ExpenseList initialExpenses={expenses as Expense[]} />;
 }
