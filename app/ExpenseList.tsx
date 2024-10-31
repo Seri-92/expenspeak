@@ -5,24 +5,39 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "../lib/supabaseClient";
 
-export default function ExpenseList({ initialExpenses = [] }) {
-  const [expenses, setExpenses] = useState(initialExpenses);
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+interface Expense {
+  id: number;
+  amount: number;
+  description: string;
+  date: string;
+}
 
-  const addExpense = async (e) => {
+interface ExpenseListProps {
+  initialExpenses?: Expense[];
+}
+
+export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) {
+  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [amount, setAmount] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [date, setDate] = useState<string>("");
+
+  const addExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const { data, error } = await supabase
       .from("expenses")
-      .insert([{ amount: parseInt(amount), description, date }])
-      .select();  // 挿入したデータを取得してレスポンスとして返す
+      .insert([{ 
+        amount: parseInt(amount), 
+        description, 
+        date 
+      }])
+      .select();
 
     if (error) {
       console.error("Error adding expense:", error);
-    } else {
-      setExpenses([...expenses, ...data]);  // 新しい支出を現在のexpensesに追加
+    } else if (data) {
+      setExpenses([...expenses, ...data as Expense[]]);
       setAmount("");
       setDescription("");
       setDate("");
