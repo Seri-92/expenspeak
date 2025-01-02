@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "../lib/supabaseClient";
+import ExpenseListDisplay from "@/components/custom/ExpenseListDisplay";
 
 interface Expense {
   id: number;
@@ -22,22 +23,42 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
   const [description, setDescription] = useState<string>("");
   const [date, setDate] = useState<string>("");
 
+  // 初回マウント時にデータを取得
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const fetchExpenses = async () => {
+    const { data, error } = await supabase
+      .from("expenses")
+      .select("*")
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching expenses:", error);
+    } else if (data) {
+      setExpenses(data as Expense[]);
+    };
+  };
+
+  // フォーム送信時に新規データを挿入し、その後最新データを取得
   const addExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("expenses")
-      .insert([{ 
-        amount: parseInt(amount), 
-        description, 
-        date 
-      }])
-      .select();
+      .insert([{
+        amount: parseInt(amount),
+        description,
+        date
+      }]);
 
     if (error) {
       console.error("Error adding expense:", error);
-    } else if (data) {
-      setExpenses([...expenses, ...data as Expense[]]);
+    } else {
+      // 挿入成功後に最新データを取得して一覧を更新
+      await fetchExpenses();
+      // フォームをリセット
       setAmount("");
       setDescription("");
       setDate("");
@@ -47,18 +68,7 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">支出一覧</h1>
-      <div className="grid gap-4">
-        {expenses.map((expense) => (
-          <Card key={expense.id}>
-            <CardHeader>
-              <CardTitle>
-                {new Date(expense.date).toLocaleDateString()}: ¥{expense.amount}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>{expense.description}</CardContent>
-          </Card>
-        ))}
-      </div>
+      <ExpenseListDisplay expenses={expenses} limit={3} />
 
       <h2 className="text-xl font-semibold mt-8 mb-4">支出を追加</h2>
       <form onSubmit={addExpense} className="space-y-4">
