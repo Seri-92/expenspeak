@@ -3,7 +3,7 @@ import ExpenseListDisplay from '@/components/custom/ExpenseListDisplay'
 import { supabase } from '@/lib/supabaseClient';
 import React, { useEffect, useState } from 'react'
 
-export default function page() {
+export default function Page() {
   const [expenses, setExpenses] = useState([]);
 
   useEffect(() => {
