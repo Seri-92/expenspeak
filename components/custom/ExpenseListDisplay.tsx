@@ -1,11 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Expense {
-  id: number;
-  amount: number;
-  description: string;
-  date: string;
-}
+import { Expense } from "@/types";
 
 interface ExpenseListDisplayProps {
   expenses: Expense[];
