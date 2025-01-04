@@ -42,6 +42,15 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
     };
   };
 
+  async function handleLogin() {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: "https://iaxrksqugrmkhmpqhxsu.supabase.co/auth/v1/callback",
+      }
+    })
+  }
+
   // フォーム送信時に新規データを挿入し、その後最新データを取得
   const addExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,6 +77,7 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
 
   return (
     <div className="p-4">
+      <Button onClick={handleLogin}>ログイン</Button>
       <h1 className="text-2xl font-bold mb-4">支出一覧</h1>
       <ExpenseListDisplay expenses={expenses} limit={3} />
 
