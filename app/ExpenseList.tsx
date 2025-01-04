@@ -3,6 +3,7 @@ import { useState, useEffect, use } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "../lib/supabaseClient";
 import ExpenseListDisplay from "@/components/custom/ExpenseListDisplay";
 
@@ -81,10 +82,22 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
         />
         <Input
           type="date"
+          placeholder="日付"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           required
         />
+        <Select>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="分類" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="light">Light</SelectItem>
+            <SelectItem value="dark">Dark</SelectItem>
+            <SelectItem value="system">System</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Input
           type="text"
           placeholder="説明"
