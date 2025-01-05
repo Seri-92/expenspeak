@@ -26,7 +26,7 @@ export default function Page() {
   };
   return (
     <div>
-      <h1 className='p-6'>支出一覧</h1>
+      <h1 className='text-2xl font-bold p-6'>支出一覧</h1>
       <ExpenseListDisplay expenses={expenses} />
     </div>
   )
