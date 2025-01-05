@@ -131,7 +131,7 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
           onChange={(e) => setDate(e.target.value)}
           required
         />
-        <Select>
+        <Select onValueChange={(value) => setSelectedCategory(parseInt(value))}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="分類を選択" />
           </SelectTrigger>
