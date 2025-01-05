@@ -18,15 +18,23 @@ interface ExpenseListProps {
   initialExpenses?: Expense[];
 }
 
+interface Category {
+  id: number;
+  name: string;
+}
+
 export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [amount, setAmount] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [date, setDate] = useState<string>("");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
 
   // 初回マウント時にデータを取得
   useEffect(() => {
     fetchExpenses();
+    fetchCategories();
   }, []);
 
   const fetchExpenses = async () => {
@@ -42,6 +50,19 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
     };
   };
 
+  const fetchCategories = async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id, name")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching categories:", error);
+    } else if (data) {
+      setCategories(data as Category[]);
+    }
+  };
+
   async function handleLogin() {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -55,29 +76,42 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
   const addExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const { error } = await supabase
+    const { data: expenseData, error: expenseError } = await supabase
       .from("expenses")
       .insert([{
         amount: parseInt(amount),
         description,
         date
-      }]);
+      }])
+      .select("id");
 
-    if (error) {
-      console.error("Error adding expense:", error);
-    } else {
-      // 挿入成功後に最新データを取得して一覧を更新
+    if (expenseError) {
+      console.error("Error adding expense:", expenseError);
+      return;
+    }
+
+    if (expenseData && selectedCategory) {
+      const { error: categoryError } = await supabase
+        .from("expense_categories")
+        .insert([{
+          expense_id: expenseData[0].id,
+          category_id: selectedCategory,
+        }]);
+  
+      if (categoryError) {
+        console.error("Error linking category:", categoryError);
+      }
+    }
       await fetchExpenses();
-      // フォームをリセット
       setAmount("");
       setDescription("");
       setDate("");
-    }
+      setSelectedCategory(null);
   };
+
 
   return (
     <div className="p-4">
-      <Button onClick={handleLogin}>ログイン</Button>
       <h1 className="text-2xl font-bold mb-4">支出一覧</h1>
       <ExpenseListDisplay expenses={expenses} limit={3} />
 
@@ -99,12 +133,14 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
         />
         <Select>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="分類" />
+            <SelectValue placeholder="分類を選択" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="light">Light</SelectItem>
-            <SelectItem value="dark">Dark</SelectItem>
-            <SelectItem value="system">System</SelectItem>
+            {categories.map((category: Category) => (
+              <SelectItem key={category.id} value={category.id.toString()}>
+                {category.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
