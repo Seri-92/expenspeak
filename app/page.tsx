@@ -1,4 +1,5 @@
 // app/page.tsx
+import ProtectedRoute from '@/components/custom/ProtectedRoute';
 import { supabase } from '../lib/supabaseClient';
 import ExpenseList from './ExpenseList';
 
@@ -22,5 +23,9 @@ export default async function Home() {
   }
 
   // フェッチしたデータをクライアントコンポーネントに渡す
-  return <ExpenseList initialExpenses={expenses as Expense[]} />;
+  return (
+    <ProtectedRoute>
+      <ExpenseList initialExpenses={expenses as Expense[]} />
+    </ProtectedRoute>
+  );
 }
