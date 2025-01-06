@@ -24,6 +24,8 @@ export default async function Home() {
 
   // フェッチしたデータをクライアントコンポーネントに渡す
   return (
-    <ExpenseList initialExpenses={expenses as Expense[]} />
+    <ProtectedRoute>
+      <ExpenseList initialExpenses={expenses as Expense[]} />
+    </ProtectedRoute>
   );
 }
