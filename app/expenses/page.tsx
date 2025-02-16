@@ -121,7 +121,6 @@ export default function Page() {
                 カテゴリー
               </Label>
               <MultiSelect
-                id='category-select'
                 options={categoryOptions}
                 selected={selectedCategories}
                 onChange={setSelectedCategories}
