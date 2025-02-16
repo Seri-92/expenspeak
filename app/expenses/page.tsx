@@ -2,22 +2,20 @@
 import ExpenseListDisplay from '@/components/custom/ExpenseListDisplay'
 import { supabase } from '@/lib/supabaseClient';
 import React, { useEffect, useState } from 'react'
-import { Category, Expense, ExpenseCategory } from '@/types';
+import { Category, Expense } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MultiSelect, type Option } from '@/components/custom/multi-select';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function Page() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
-
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().slice(0, 7)
   );
-
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  // カテゴリー一覧を取得
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -36,23 +34,16 @@ export default function Page() {
     } else if (data) {
       setCategories(data as Category[]);
     }
-    console.log(data);
   }
 
   const fetchExpenses = async () => {
-    // selectedMonth から月初・月末を計算(GMT+9)
     const [year, month] = selectedMonth.split("-").map(Number);
-
-    // 東京時間 (UTC+9) における月初と月末の計算
-    const startDate = new Date(year, month - 1, 1, 0, 0, 0); // JSTの月初 00:00:00
-    const endDate = new Date(year, month, 0, 23, 59, 59, 999); // JSTの月末 23:59:59.999
-
-    // ISO形式にするためにUTCの時差（-9時間）を調整
+    const startDate = new Date(year, month - 1, 1, 0, 0, 0);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
     const startDateISO = new Date(startDate.getTime() - 9 * 60 * 60 * 1000).toISOString();
     const endDateISO = new Date(endDate.getTime() - 9 * 60 * 60 * 1000).toISOString();
 
     let expenseIds: string[] = [];
-    // 選択されたカテゴリーがある場合、expense_categories から expense_id を取得
     if (selectedCategories.length > 0) {
       const { data: ecData, error: ecError } = await supabase
         .from("expense_categories")
@@ -67,15 +58,11 @@ export default function Page() {
 
     let query = supabase
       .from("expenses")
-      .select(`
-        *,
-        expense_categories ( category_id )
-      `)
+      .select(`*, expense_categories ( category_id )`)
       .gte("date", startDateISO)
       .lte("date", endDateISO)
       .order("date", { ascending: true });
 
-    // expense_ids で絞り込み
     if (selectedCategories.length > 0) {
       query = query.in("id", expenseIds);
     }
@@ -93,43 +80,65 @@ export default function Page() {
     setSelectedMonth(e.target.value);
   };
 
-  // カテゴリー情報を MultiSelect の Option 型に変換（id を文字列に）
   const categoryOptions: Option[] = categories.map((category) => ({
     value: String(category.id),
     label: category.name,
   }));
 
-  // 絞り込み後の expense の合計金額を計算
   const totalExpense = expenses.reduce((sum, expense) => sum + expense.amount, 0);
 
   return (
-    <div>
-      <h1 className='text-2xl font-bold p-6'>支出一覧</h1>
-      <div className='p-4 mt-4'>
-        <h2 className='text-xl font-semibold'>合計金額: {totalExpense.toLocaleString()} 円</h2>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className='text-3xl font-bold mb-8 text-center text-gray-800'>支出一覧</h1>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
+        <Card>
+          <CardHeader>
+            <CardTitle>合計金額</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className='text-3xl font-semibold text-primary'>{totalExpense.toLocaleString()} 円</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>フィルター</CardTitle>
+          </CardHeader>
+          <CardContent className='space-y-4'>
+            <div>
+              <Label htmlFor='month-select' className='block text-sm font-medium text-gray-700 mb-1'>
+                月の選択
+              </Label>
+              <Input
+                id='month-select'
+                type='month'
+                value={selectedMonth}
+                onChange={handleMonthChange}
+                className='w-full'
+              />
+            </div>
+            <div>
+              <Label htmlFor='category-select' className='block text-sm font-medium text-gray-700 mb-1'>
+                カテゴリー
+              </Label>
+              <MultiSelect
+                id='category-select'
+                options={categoryOptions}
+                selected={selectedCategories}
+                onChange={setSelectedCategories}
+                placeholder='カテゴリー選択'
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
-      <div className='p-4'>
-        <Label htmlFor='month-select' className='text-xl mr-4'>
-          月の選択
-          <Input
-            id='month-select'
-            type='month'
-            value={selectedMonth}
-            onChange={handleMonthChange}
-            className='w-40'
-          />
-        </Label>
-      </div>
-      <div className='p-4'>
-        <h2 className='text-xl'>カテゴリー</h2>
-        <MultiSelect
-          options={categoryOptions}
-          selected={selectedCategories}
-          onChange={setSelectedCategories}
-          placeholder='カテゴリー選択'
-        />
-      </div>
-      <ExpenseListDisplay expenses={expenses} />
+      <Card>
+        <CardHeader>
+          <CardTitle>支出詳細</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ExpenseListDisplay expenses={expenses} />
+        </CardContent>
+      </Card>
     </div>
   )
 }
