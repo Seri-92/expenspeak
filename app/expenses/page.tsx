@@ -99,9 +99,15 @@ export default function Page() {
     label: category.name,
   }));
 
+  // 絞り込み後の expense の合計金額を計算
+  const totalExpense = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
   return (
     <div>
       <h1 className='text-2xl font-bold p-6'>支出一覧</h1>
+      <div className='p-4 mt-4'>
+        <h2 className='text-xl font-semibold'>合計金額: {totalExpense.toLocaleString()} 円</h2>
+      </div>
       <div className='p-4'>
         <Label htmlFor='month-select' className='text-xl mr-4'>
           月の選択
