@@ -54,7 +54,7 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
     const { data, error } = await supabase
       .from("categories")
       .select("id, name")
-      .order("name", { ascending: true });
+      .order("id", { ascending: true });
 
     if (error) {
       console.error("Error fetching categories:", error);

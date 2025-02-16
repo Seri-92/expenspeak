@@ -28,7 +28,7 @@ export default function Page() {
     const { data, error } = await supabase
       .from("categories")
       .select("*")
-      .order("name", { ascending: true });
+      .order("id", { ascending: true });
     if (error) {
       console.error("Error fetching categories:", error);
     } else if (data) {
