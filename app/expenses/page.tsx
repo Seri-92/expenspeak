@@ -5,6 +5,7 @@ import React, { useEffect, useState } from 'react'
 import { Category, Expense, ExpenseCategory } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MultiSelect, type Option } from '@/components/custom/multi-select';
 
 export default function Page() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -14,7 +15,7 @@ export default function Page() {
   );
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   // カテゴリー一覧を取得
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function Page() {
       const { data: ecData, error: ecError } = await supabase
         .from("expense_categories")
         .select("expense_id")
-        .in("category_id", selectedCategories);
+        .in("category_id", selectedCategories.map(Number));
       if (ecError) {
         console.error("Error fetching expense_categories:", ecError);
       } else if (ecData) {
@@ -92,14 +93,11 @@ export default function Page() {
     setSelectedMonth(e.target.value);
   };
 
-  const handleCategoryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const catId = parseInt(e.target.value);
-    if (e.target.checked) {
-      setSelectedCategories(prev => [...prev, catId]);
-    } else {
-      setSelectedCategories(prev => prev.filter(id => id !== catId));
-    }
-  };
+  // カテゴリー情報を MultiSelect の Option 型に変換（id を文字列に）
+  const categoryOptions: Option[] = categories.map((category) => ({
+    value: String(category.id),
+    label: category.name,
+  }));
 
   return (
     <div>
@@ -118,21 +116,12 @@ export default function Page() {
       </div>
       <div className='p-4'>
         <h2 className='text-xl'>カテゴリー</h2>
-        <div>
-          {categories.map((category) => (
-            <Label key={category.id} className='mr-4'>
-              カテゴリー選択
-            <Input
-              type='checkbox'
-              value={category.id}
-              checked={selectedCategories.includes(category.id)}
-              onChange={handleCategoryChange}
-            />
-            {category.name}
-            </Label>
-          ))}
-
-        </div>
+        <MultiSelect
+          options={categoryOptions}
+          selected={selectedCategories}
+          onChange={setSelectedCategories}
+          placeholder='カテゴリー選択'
+        />
       </div>
       <ExpenseListDisplay expenses={expenses} />
     </div>
