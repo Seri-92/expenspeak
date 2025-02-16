@@ -2,7 +2,7 @@
 import ExpenseListDisplay from '@/components/custom/ExpenseListDisplay'
 import { supabase } from '@/lib/supabaseClient';
 import React, { useEffect, useState } from 'react'
-import { Expense } from '@/types';
+import { Category, Expense, ExpenseCategory } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -13,7 +13,7 @@ export default function Page() {
     new Date().toISOString().slice(0, 7)
   );
 
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
   // カテゴリー一覧を取得
@@ -33,7 +33,7 @@ export default function Page() {
     if (error) {
       console.error("Error fetching categories:", error);
     } else if (data) {
-      setCategories(data);
+      setCategories(data as Category[]);
     }
     console.log(data);
   }
@@ -60,7 +60,7 @@ export default function Page() {
       if (ecError) {
         console.error("Error fetching expense_categories:", ecError);
       } else if (ecData) {
-        expenseIds = ecData.map((item: any) => item.expense_id);
+        expenseIds = ecData.map((item) => item.expense_id);
       }
     }
 
