@@ -357,8 +357,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY # Supabase 匿名キー
 
 ### コンポーネント設計パターン
 - **Container/Presentational Pattern**: 
-  - ページコンポーネント: データフェッチとロジック
-  - Display コンポーネント: プレゼンテーション
+  - ページコンポーネント: データフェッチとロジック（Container）
+  - Display コンポーネント: プレゼンテーション（Presentational）
+  - メリット: ビジネスロジックとUIレンダリングの分離により、テスタビリティと再利用性が向上
 - **Compound Components**: shadcn/ui コンポーネント
 - **Custom Hooks**: 将来的に追加可能
 
