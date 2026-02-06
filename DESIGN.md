@@ -21,12 +21,12 @@ Expenspeakは、個人の支出を管理するためのWebアプリケーショ�
 - **Supabase**: BaaS（Backend as a Service）
   - PostgreSQL データベース
   - 認証（Google OAuth）
-  - リアルタイムAPI
+  - REST API（現在使用中）
 
 #### 開発ツール
-- **Vitest**: テストフレームワーク
+- **Vitest 3.0.5**: テストフレームワーク（高速なユニットテスト）
 - **ESLint**: コード品質チェック
-- **TypeScript**: 型チェック
+- **TypeScript 5**: 型チェック
 
 ### プロジェクト構造
 
@@ -286,14 +286,16 @@ interface Category {
 
 ### レンダリング戦略
 - **ホームページ**: サーバーサイドレンダリング（SSR）
-  - 初期表示の高速化
+  - React Server Components による初期表示の高速化
   - SEO 最適化
+  - サーバーでのデータフェッチ
 - **一覧ページ**: クライアントサイドレンダリング（CSR）
   - インタラクティブなフィルタリング
-  - リアルタイム更新
+  - 動的な状態管理
 
 ### 最適化技術
 - **Next.js App Router**: 自動コード分割
+- **React Server Components**: サーバーサイドでのコンポーネントレンダリング
 - **Next.js Image**: 画像最適化（将来的に使用可能）
 - **クエリ最適化**: 必要なフィールドのみ SELECT
 - **リスト制限**: ホームページで最新3件のみ表示
