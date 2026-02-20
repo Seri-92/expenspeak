@@ -64,10 +64,11 @@ export default function ExpenseList({ initialExpenses = [] }: ExpenseListProps) 
   };
 
   async function handleLogin() {
+    const redirectTo = `${window.location.origin}/auth/callback`;
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: "https://iaxrksqugrmkhmpqhxsu.supabase.co/auth/v1/callback",
+        redirectTo,
       }
     })
   }
