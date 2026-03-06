@@ -1,7 +1,6 @@
-name: User Story
+name: ユーザーストーリー
 description: 機能要求を登録する
-title: "[Story] "
-labels: ["story"]
+title: "[ユーザーストーリー] "
 
 body:
   - type: textarea
@@ -25,6 +24,7 @@ body:
         「何ができたら完成か」を書く。
         テスト手順・テストデータの詳細はテストケース側で管理する。
       placeholder: |
+        例：
         - ユーザー名で検索できる
         - 検索結果が一覧表示される
         - 0件の場合は「該当なし」と表示される
