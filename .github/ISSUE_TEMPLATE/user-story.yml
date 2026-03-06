@@ -3,15 +3,16 @@ description: 機能要求を登録する
 labels: ["ユーザーストーリー"]
 
 body:
-  - type: markdown
-    attributes:
-      value: |
-        ＜役割＞として、＜機能や性能＞ができる。それは、＜ビジネス価値＞のためだ。
-
   - type: textarea
     id: story
     attributes:
       label: ユーザーストーリー
+      description: |
+        ＜役割＞として、＜機能や性能＞ができる。それは、＜ビジネス価値＞のためだ。
+      value: |
+        ```
+        ＜役割＞として、＜機能や性能＞ができる。それは、＜ビジネス価値＞のためだ。
+        ```
       placeholder: |
         例：
         管理者として、ユーザー一覧を検索できる。
