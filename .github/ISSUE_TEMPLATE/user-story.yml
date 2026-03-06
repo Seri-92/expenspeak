@@ -7,7 +7,7 @@ body:
     id: story
     attributes:
       label: ユーザーストーリー
-      description: |
+      value: |
         ＜役割＞として、＜機能や性能＞ができる。それは、＜ビジネス価値＞のためだ。
       placeholder: |
         例：
