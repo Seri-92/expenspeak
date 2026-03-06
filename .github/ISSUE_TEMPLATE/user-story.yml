@@ -1,0 +1,30 @@
+name: User Story
+description: 機能要求を登録する
+title: "[Story] "
+labels: ["story"]
+
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: ユーザーストーリー
+      description: |
+        ＜役割＞として、＜機能や性能＞ができる。それは、＜ビジネス価値＞のためだ。
+      placeholder: |
+        例：
+        管理者として、ユーザー一覧を検索できる。
+        それは、サポート対応を効率化するためだ。
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 受け入れ基準
+      description: |
+        「何ができたら完成か」を書く。
+        テスト手順・テストデータの詳細はテストケース側で管理する。
+      placeholder: |
+        - ユーザー名で検索できる
+        - 検索結果が一覧表示される
+        - 0件の場合は「該当なし」と表示される
