@@ -1,6 +1,5 @@
 name: ユーザーストーリー
 description: 機能要求を登録する
-title: ""
 labels: ["ユーザーストーリー"]
 
 body:
