@@ -58,7 +58,7 @@ Supabase Dashboard の SQL Editor で `dev` プロジェクトに対して実行
 ## Supabase スキーマ管理
 
 このリポジトリでは、Supabase のテーブル定義を `supabase/migrations/` でコード管理します。  
-初回だけ、既存の `dev` プロジェクト上にあるスキーマを取り込みます。
+Docker 非依存で運用するため、初回は既存の `dev` スキーマを手で baseline migration に落とし込みます。
 
 ### 初回セットアップ
 
@@ -70,11 +70,7 @@ Supabase Dashboard の SQL Editor で `dev` プロジェクトに対して実行
 yarn db:link -- --project-ref <your-dev-project-ref> -p <your-db-password>
 ```
 
-3. 既存スキーマを migration として取り込みます。
-
-```bash
-yarn db:pull
-```
+3. SQL Editor / Dashboard で現在の `dev` スキーマを確認し、`supabase/migrations/` の baseline migration に反映します。
 
 4. 必要であれば型を生成します。
 
@@ -82,12 +78,15 @@ yarn db:pull
 yarn db:types
 ```
 
+補足: `yarn db:pull` は Supabase CLI の実行環境によってはコンテナランタイムを要求します。このリポジトリでは初回取り込みの標準手順としては使いません。
+
 ### 以後の運用
 
 - DB スキーマ変更は Supabase Console で直接行わず、migration 経由で管理する
 - 新規 migration は `yarn db:new <name>` で作成する
 - migration を `dev` へ適用する時は `yarn db:push` を使う
-- 緊急対応で Supabase Console を直接変更した場合は、直後に `yarn db:pull` でリポジトリへ同期する
+- 緊急対応で Supabase Console を直接変更した場合は、変更内容を migration に手で反映してリポジトリへ同期する
+- RLS や policy は既存アプリの挙動確認後に別 migration で段階的に導入する
 
 ### 型管理の方針
 
