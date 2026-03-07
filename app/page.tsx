@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabaseClient';
 import ExpenseList from './ExpenseList';
 
 interface Expense {
-  id: number;
+  id: string;
   amount: number;
   description: string;
   date: string;

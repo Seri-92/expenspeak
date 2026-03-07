@@ -1,11 +1,11 @@
 export interface Expense {
-  id: number;
+  id: string;
   amount: number;
   description: string;
   date: string;
 }
 
 export interface ExpenseCategory {
-  expense_id: number;
+  expense_id: string;
   category_id: number;
 }

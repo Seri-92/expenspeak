@@ -8,7 +8,7 @@ import { supabase } from "../lib/supabaseClient";
 import ExpenseListDisplay from "@/components/custom/ExpenseListDisplay";
 
 interface Expense {
-  id: number;
+  id: string;
   amount: number;
   description: string;
   date: string;
