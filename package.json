@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest"
+    "test": "vitest",
+    "db:link": "npx supabase link",
+    "db:pull": "npx supabase db pull",
+    "db:push": "npx supabase db push",
+    "db:types": "npx supabase gen types typescript --linked --schema public > types/database.generated.ts",
+    "db:new": "npx supabase migration new"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.6",
