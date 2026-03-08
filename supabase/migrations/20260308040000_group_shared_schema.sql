@@ -1,4 +1,5 @@
 create extension if not exists "uuid-ossp";
+create extension if not exists pgcrypto;
 
 drop table if exists public.expense_categories cascade;
 drop table if exists public.expenses cascade;
@@ -34,7 +35,7 @@ create table public.users (
 );
 
 create table public.groups (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   created_by uuid not null references public.users(id) on delete cascade,
   personal_owner_user_id uuid unique references public.users(id) on delete set null,
@@ -72,7 +73,7 @@ create table public.categories (
 );
 
 create table public.expenses (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   group_id uuid not null references public.groups(id) on delete cascade,
   category_id bigint not null,
   created_by uuid not null references public.users(id) on delete restrict,
