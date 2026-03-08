@@ -1,26 +1,24 @@
 "use client";
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useAppContext } from "@/components/custom/AppContext";
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const { isAuthenticated, loading } = useAppContext();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push('/login'); // ログインページにリダイレクト
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, []);
+    if (!loading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, loading, router]);
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return <>{children}</>;

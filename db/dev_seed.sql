@@ -1,21 +1,20 @@
 -- dev_seed.sql
 -- Execute this on your Supabase DEV project via SQL Editor.
--- Inserts sample categories only when they do not exist.
+-- Replace the sample user id with an existing auth.users / public.users id.
+-- Personal groups already receive default categories on first login.
 
-insert into public.categories (name)
-select '食費'
-where not exists (
-  select 1 from public.categories where name = '食費'
-);
-
-insert into public.categories (name)
-select '交通費'
-where not exists (
-  select 1 from public.categories where name = '交通費'
-);
-
-insert into public.categories (name)
-select '日用品'
-where not exists (
-  select 1 from public.categories where name = '日用品'
-);
+with target_user as (
+  select current_group_id
+  from public.users
+  where id = '00000000-0000-0000-0000-000000000000'
+)
+insert into public.categories (group_id, name)
+select target_user.current_group_id, '交際費'
+from target_user
+where target_user.current_group_id is not null
+  and not exists (
+    select 1
+    from public.categories c
+    where c.group_id = target_user.current_group_id
+      and c.name = '交際費'
+  );

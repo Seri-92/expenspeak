@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { AppProvider } from "@/components/custom/AppContext";
+import AppHeader from "@/components/custom/AppHeader";
 
-const inter = Inter({subsets: ['latin']});
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+});
 
 export const metadata: Metadata = {
   title: "Expenspeak",
@@ -19,20 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body className={cn(inter.className, 'min-h-dvh')}>
-        <header className="h-16 border-b px-6 flex items-center">
-          <Button asChild variant="ghost" className="font-bold text-xl">
-            <Link href="/"> Expenspeak</Link>
-          </Button>
-          <Button asChild variant="ghost" className="font-bold text-xl">
-            <Link href="/expenses">支出一覧</Link>
-          </Button>
-            {/* <h1 className='text-4xl font-bold mb-4'>Expenspeak</h1> */}
-        </header>
-        <main>{children}</main>
-        <footer className="h-16 sticky top-full border-t px-6 flex items-center">
-          <p>&copy; {new Date().getFullYear()} Expenspeak</p>
-        </footer>
+      <body className={cn(geistSans.className, "min-h-dvh")}>
+        <AppProvider>
+          <AppHeader />
+          <main>{children}</main>
+          <footer className="sticky top-full flex h-16 items-center border-t px-6">
+            <p>&copy; {new Date().getFullYear()} Expenspeak</p>
+          </footer>
+        </AppProvider>
       </body>
     </html>
   );

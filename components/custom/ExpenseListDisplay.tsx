@@ -18,7 +18,12 @@ export default function ExpenseListDisplay({ expenses, limit }: ExpenseListDispl
               {new Date(expense.date).toLocaleDateString()}: ¥{expense.amount}
             </CardTitle>
           </CardHeader>
-          <CardContent>{expense.description}</CardContent>
+          <CardContent className="space-y-1">
+            <p>{expense.description}</p>
+            {expense.category ? (
+              <p className="text-sm text-muted-foreground">{expense.category.name}</p>
+            ) : null}
+          </CardContent>
         </Card>
       ))}
     </div>

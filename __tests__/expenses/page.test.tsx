@@ -1,46 +1,118 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import Page from "@/app/expenses/page";
-import { expect, test, describe, beforeEach, vi } from "vitest";
-import { a } from "vitest/dist/chunks/suite.BJU7kdY9.js";
 
-// Supabase のチェーン用のモックを作成
+const useAppContextMock = vi.fn();
+const fromMock = vi.fn();
 
-vi.mock("@/lib/supabaseClient", () => {
-  const gteMock = vi.fn().mockReturnThis();
-  const lteMock = vi.fn().mockReturnThis();
-  const orderMock = vi.fn().mockReturnThis();
-  const selectMock = vi.fn().mockReturnThis();
-  const fromMock = vi.fn(() => ({
-    select: selectMock,
-    gte: gteMock,
-    lte: lteMock,
-    order: orderMock,
-  }));
+vi.mock("@/components/custom/AppContext", () => ({
+  useAppContext: () => useAppContextMock(),
+}));
 
-  return {
-    supabase: {
-      from: fromMock,
-    },
+vi.mock("@/lib/supabaseClient", () => ({
+  supabase: {
+    from: (table: string) => fromMock(table),
+  },
+}));
+
+function createCategoriesQuery() {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    order: vi.fn(async () => ({
+      data: [
+        { id: 1, group_id: "group-1", name: "食費" },
+        { id: 2, group_id: "group-1", name: "交通費" },
+      ],
+      error: null,
+    })),
   };
-});
 
+  return query;
+}
+
+function createExpensesQuery() {
+  const query = {
+    select: vi.fn(() => query),
+    eq: vi.fn(() => query),
+    gte: vi.fn(() => query),
+    lte: vi.fn(() => query),
+    in: vi.fn(() => query),
+    order: vi.fn(async () => ({
+      data: [
+        {
+          id: "expense-1",
+          group_id: "group-1",
+          category_id: 1,
+          created_by: "user-1",
+          amount: 1200,
+          description: "ランチ",
+          date: "2026-03-01T00:00:00.000Z",
+          category: { id: 1, name: "食費" },
+        },
+      ],
+      error: null,
+    })),
+  };
+
+  return query;
+}
 
 describe("Expense Page", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
+    useAppContextMock.mockReturnValue({
+      currentGroup: { id: "group-1", name: "個人グループ", role: "owner" },
+      loading: false,
+    });
+    fromMock.mockImplementation((table: string) => {
+      if (table === "categories") {
+        return createCategoriesQuery();
+      }
+
+      if (table === "expenses") {
+        return createExpensesQuery();
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+  });
+
+  test("初期表示で現在の月がセットされている", async () => {
     render(<Page />);
-  });
 
-  test("初期表示で現在の月がセットされている", () => {
-    const monthInput = screen.getByLabelText(/月の選択/i) as HTMLInputElement;
+    const monthInput = (await screen.findByLabelText(/月の選択/i)) as HTMLInputElement;
     const expectedMonth = new Date().toISOString().slice(0, 7);
+
     expect(monthInput.value).toBe(expectedMonth);
+    await waitFor(() => {
+      expect(screen.getByText("1,200 円")).toBeTruthy();
+    });
   });
 
-  test("月選択を変更すると state が更新される", () => {
-    const monthInput = screen.getByLabelText(/月の選択/i) as HTMLInputElement;
-    fireEvent.change(monthInput, { target: { value: "2025-03" } });
+  test("選択中グループの支出合計を表示する", async () => {
+    render(<Page />);
 
-    expect(monthInput.value).toBe("2025-03");
+    await waitFor(() => {
+      expect(screen.getByText("現在のグループ: 個人グループ")).toBeTruthy();
+    });
+
+    expect(screen.getAllByText("ランチ")).toHaveLength(1);
+    expect(screen.getByText("1,200 円")).toBeTruthy();
+  });
+
+  test("グループ未選択時は案内を表示する", () => {
+    useAppContextMock.mockReturnValue({
+      currentGroup: null,
+      loading: false,
+    });
+
+    render(<Page />);
+
+    expect(screen.getByText("利用可能なグループがありません。")).toBeTruthy();
   });
 });
