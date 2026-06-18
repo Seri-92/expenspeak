@@ -74,7 +74,7 @@ describe("Admin Page", () => {
     expect(screen.getByText("管理者権限がありません。")).toBeTruthy();
   });
 
-  test("admin はグループ作成とメンバー追加のフォームを見られる", async () => {
+  test("admin はグループ作成、メンバー追加、分類登録のフォームを見られる", async () => {
     render(<Page />);
 
     await waitFor(() => {
@@ -85,6 +85,9 @@ describe("Admin Page", () => {
     expect(screen.getByRole("button", { name: "グループを作成" })).toBeTruthy();
     expect(screen.getByLabelText("追加先グループ")).toBeTruthy();
     expect(screen.getByLabelText("追加するユーザー")).toBeTruthy();
+    expect(screen.getByLabelText("分類を登録するグループ")).toBeTruthy();
+    expect(screen.getByLabelText("分類名")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "分類を登録" })).toBeTruthy();
     expect(screen.getAllByText("共有グループ").length).toBeGreaterThan(0);
     expect(screen.getAllByText("member@example.com").length).toBeGreaterThan(0);
   });
@@ -182,6 +185,49 @@ describe("Admin Page", () => {
         },
         { onConflict: "group_id,user_id" },
       );
+    });
+  });
+
+  test("グループに分類を登録できる", async () => {
+    const categoryInsertSelectSingleMock = vi.fn(async () => ({
+      data: { id: 10, group_id: "group-1", name: "交通費" },
+      error: null,
+    }));
+    const categoryInsertSelectMock = vi.fn(() => ({ single: categoryInsertSelectSingleMock }));
+    const categoryInsertMock = vi.fn(() => ({ select: categoryInsertSelectMock }));
+
+    fromMock.mockImplementation((table: string) => {
+      if (table === "users") {
+        return createSelectQuery([
+          { id: "admin-user", email: "admin@example.com", display_name: "Admin", role: "admin" },
+        ]);
+      }
+
+      if (table === "groups") {
+        return createSelectQuery([
+          { id: "group-1", name: "共有グループ", created_by: "admin-user" },
+        ]);
+      }
+
+      if (table === "categories") {
+        return { insert: categoryInsertMock };
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    render(<Page />);
+
+    fireEvent.change(await screen.findByLabelText("分類名"), {
+      target: { value: "  交通費  " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "分類を登録" }));
+
+    await waitFor(() => {
+      expect(categoryInsertMock).toHaveBeenCalledWith({
+        group_id: "group-1",
+        name: "交通費",
+      });
     });
   });
 });

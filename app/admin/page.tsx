@@ -17,6 +17,8 @@ export default function Page() {
   const [groups, setGroups] = useState<AdminGroup[]>([]);
   const [groupName, setGroupName] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [selectedCategoryGroupId, setSelectedCategoryGroupId] = useState("");
+  const [categoryName, setCategoryName] = useState("");
   const [selectedUserId, setSelectedUserId] = useState("");
   const [selectedRole, setSelectedRole] = useState<"owner" | "member">("member");
   const [message, setMessage] = useState("");
@@ -48,6 +50,7 @@ export default function Page() {
     setGroups(nextGroups);
     setSelectedUserId((current) => current || nextUsers[0]?.id || "");
     setSelectedGroupId((current) => current || nextGroups[0]?.id || "");
+    setSelectedCategoryGroupId((current) => current || nextGroups[0]?.id || "");
   };
 
   useEffect(() => {
@@ -102,6 +105,7 @@ export default function Page() {
     setGroupName("");
     setGroups((current) => [group as AdminGroup, ...current]);
     setSelectedGroupId(group.id);
+    setSelectedCategoryGroupId(group.id);
     setMessage("グループを作成しました。");
     setIsSaving(false);
   };
@@ -136,6 +140,37 @@ export default function Page() {
     setMessage(`${user?.email ?? "ユーザー"} をグループに追加しました。`);
   };
 
+  const createCategory = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedName = categoryName.trim();
+    if (!selectedCategoryGroupId || !trimmedName) {
+      return;
+    }
+
+    setIsSaving(true);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("categories")
+      .insert({
+        group_id: selectedCategoryGroupId,
+        name: trimmedName,
+      })
+      .select("id, group_id, name")
+      .single();
+
+    setIsSaving(false);
+
+    if (error) {
+      setMessage("分類登録に失敗しました。");
+      return;
+    }
+
+    setCategoryName("");
+    setMessage("分類を登録しました。");
+  };
+
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading...</div>;
   }
@@ -153,7 +188,7 @@ export default function Page() {
       <div>
         <h1 className="text-2xl font-semibold">管理</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          グループ作成とユーザーの所属グループを管理します。
+          グループ作成、ユーザーの所属グループ、分類を管理します。
         </p>
       </div>
 
@@ -172,6 +207,38 @@ export default function Page() {
           </div>
           <Button type="submit" disabled={isSaving || !groupName.trim()}>
             グループを作成
+          </Button>
+        </form>
+      </section>
+
+      <section className="grid gap-4 rounded border p-4">
+        <h2 className="text-lg font-medium">分類登録</h2>
+        <form className="grid gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end" onSubmit={createCategory}>
+          <div className="grid gap-2">
+            <Label htmlFor="category-group">分類を登録するグループ</Label>
+            <select
+              id="category-group"
+              className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={selectedCategoryGroupId}
+              onChange={(event) => setSelectedCategoryGroupId(event.target.value)}
+            >
+              {groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="category-name">分類名</Label>
+            <Input
+              id="category-name"
+              value={categoryName}
+              onChange={(event) => setCategoryName(event.target.value)}
+            />
+          </div>
+          <Button type="submit" disabled={isSaving || !selectedCategoryGroupId || !categoryName.trim()}>
+            分類を登録
           </Button>
         </form>
       </section>
