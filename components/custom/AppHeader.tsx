@@ -24,6 +24,11 @@ export default function AppHeader() {
       <Button asChild variant="ghost" className="text-base font-medium">
         <Link href="/expenses">支出一覧</Link>
       </Button>
+      {profile?.role === "admin" ? (
+        <Button asChild variant="ghost" className="text-base font-medium">
+          <Link href="/admin">管理</Link>
+        </Button>
+      ) : null}
       <div className="ml-auto flex flex-wrap items-center gap-3">
         {isAuthenticated && !loading ? (
           <>

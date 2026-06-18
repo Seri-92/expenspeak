@@ -25,7 +25,7 @@ const AppContext = createContext<AppContextValue | undefined>(undefined);
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, display_name, avatar_url, current_group_id, created_at, updated_at")
+    .select("id, email, display_name, avatar_url, current_group_id, role, created_at, updated_at")
     .eq("id", userId)
     .single();
 

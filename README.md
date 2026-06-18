@@ -55,6 +55,19 @@ yarn dev
 `db/dev_seed.sql` に `dev` 環境向けのサンプルSQLを用意しています。  
 Supabase Dashboard の SQL Editor で `dev` プロジェクトに対して実行してください。
 
+## 管理者設定
+
+`/admin` は `public.users.role = 'admin'` のユーザーだけが利用できます。  
+初回は Supabase Dashboard の SQL Editor で対象プロジェクトを確認してから、次のように管理者を設定してください。
+
+```sql
+update public.users
+set role = 'admin'
+where email = 'your-email@example.com';
+```
+
+`dev` と `prod` は別プロジェクトなので、管理者設定もそれぞれの Supabase プロジェクトで個別に行います。
+
 ## Supabase スキーマ管理
 
 このリポジトリでは、Supabase のテーブル定義を `supabase/migrations/` でコード管理します。  

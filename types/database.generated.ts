@@ -188,6 +188,7 @@ export type Database = {
           display_name: string | null;
           email: string;
           id: string;
+          role: "user" | "admin";
           updated_at: string;
         };
         Insert: {
@@ -197,6 +198,7 @@ export type Database = {
           display_name?: string | null;
           email: string;
           id: string;
+          role?: "user" | "admin";
           updated_at?: string;
         };
         Update: {
@@ -206,6 +208,7 @@ export type Database = {
           display_name?: string | null;
           email?: string;
           id?: string;
+          role?: "user" | "admin";
           updated_at?: string;
         };
         Relationships: [
@@ -223,6 +226,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      current_user_role: {
+        Args: Record<PropertyKey, never>;
+        Returns: string;
+      };
+      is_admin: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       is_group_member: {
         Args: {
           target_group_id: string;
