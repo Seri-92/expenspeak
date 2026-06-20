@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Mic, MicOff } from "lucide-react";
 import ExpenseListDisplay from "@/components/custom/ExpenseListDisplay";
 import { useAppContext } from "@/components/custom/AppContext";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,48 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/lib/supabaseClient";
+import { parseVoiceExpense } from "@/lib/voiceExpenseParser";
 import type { Category, Expense } from "@/types";
+
+interface BrowserSpeechRecognitionAlternative {
+  transcript: string;
+}
+
+interface BrowserSpeechRecognitionResult {
+  [index: number]: BrowserSpeechRecognitionAlternative | undefined;
+}
+
+interface BrowserSpeechRecognitionEvent {
+  results: {
+    [index: number]: BrowserSpeechRecognitionResult | undefined;
+  };
+}
+
+interface BrowserSpeechRecognitionErrorEvent {
+  error?: string;
+}
+
+interface BrowserSpeechRecognition {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
+  onerror: ((event: BrowserSpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
+interface BrowserSpeechRecognitionWindow extends Window {
+  SpeechRecognition?: new () => BrowserSpeechRecognition;
+  webkitSpeechRecognition?: new () => BrowserSpeechRecognition;
+}
+
+const missingFieldLabels: Record<string, string> = {
+  amount: "金額",
+  category: "分類",
+  description: "説明",
+};
 
 export default function ExpenseList() {
   const { currentGroup, loading: appLoading, session } = useAppContext();
@@ -25,6 +67,10 @@ export default function ExpenseList() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+  const [voiceMessage, setVoiceMessage] = useState("");
+  const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
 
   const fetchCategories = async (groupId: string) => {
     const { data, error } = await supabase
@@ -82,6 +128,81 @@ export default function ExpenseList() {
     void syncGroupData();
   }, [currentGroup?.id]);
 
+  useEffect(() => {
+    return () => {
+      speechRecognitionRef.current?.stop();
+    };
+  }, []);
+
+  const applyVoiceExpense = (spokenText: string) => {
+    const parsedExpense = parseVoiceExpense(spokenText, categories);
+
+    setVoiceTranscript(spokenText);
+    setAmount(parsedExpense.amount === null ? "" : String(parsedExpense.amount));
+    setDate(parsedExpense.date);
+    setSelectedCategory(parsedExpense.categoryId);
+    setDescription(parsedExpense.description);
+    setVoiceMessage(
+      parsedExpense.missingFields.length > 0
+        ? `未入力: ${parsedExpense.missingFields.map((field) => missingFieldLabels[field]).join(", ")}`
+        : "音声入力をフォームに反映しました。",
+    );
+  };
+
+  const handleVoiceInput = () => {
+    if (isListening) {
+      speechRecognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const speechWindow = window as BrowserSpeechRecognitionWindow;
+    const SpeechRecognition =
+      speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setVoiceMessage("このブラウザでは音声入力に対応していません。");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "ja-JP";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = (event) => {
+      const spokenText = event.results[0]?.[0]?.transcript?.trim() ?? "";
+
+      if (!spokenText) {
+        setVoiceMessage("音声を認識できませんでした。");
+        return;
+      }
+
+      applyVoiceExpense(spokenText);
+    };
+    recognition.onerror = (event) => {
+      setVoiceMessage(
+        event.error ? `音声入力に失敗しました: ${event.error}` : "音声入力に失敗しました。",
+      );
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      speechRecognitionRef.current = null;
+    };
+
+    speechRecognitionRef.current = recognition;
+    setIsListening(true);
+    setVoiceMessage("音声を聞き取っています。");
+
+    try {
+      recognition.start();
+    } catch {
+      setIsListening(false);
+      speechRecognitionRef.current = null;
+      setVoiceMessage("音声入力を開始できませんでした。");
+    }
+  };
+
   const addExpense = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -134,6 +255,23 @@ export default function ExpenseList() {
         </CardHeader>
         <CardContent>
           <form onSubmit={addExpense} className="space-y-4">
+            <div className="space-y-2 rounded-md border border-input p-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleVoiceInput}
+                disabled={categories.length === 0}
+              >
+                {isListening ? <MicOff /> : <Mic />}
+                {isListening ? "停止" : "音声入力"}
+              </Button>
+              {voiceTranscript ? (
+                <p className="text-sm text-muted-foreground">認識: {voiceTranscript}</p>
+              ) : null}
+              {voiceMessage ? (
+                <p className="text-sm text-muted-foreground">{voiceMessage}</p>
+              ) : null}
+            </div>
             <Input
               type="number"
               placeholder="金額"
