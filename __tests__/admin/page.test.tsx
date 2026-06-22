@@ -24,6 +24,13 @@ function createSelectQuery(data: unknown[]) {
   return query;
 }
 
+function createCategoryQuery(data: unknown[] = [], overrides: Record<string, unknown> = {}) {
+  return {
+    ...createSelectQuery(data),
+    ...overrides,
+  };
+}
+
 describe("Admin Page", () => {
   afterEach(() => {
     cleanup();
@@ -51,6 +58,12 @@ describe("Admin Page", () => {
       if (table === "groups") {
         return createSelectQuery([
           { id: "group-1", name: "共有グループ", created_by: "admin-user" },
+        ]);
+      }
+
+      if (table === "categories") {
+        return createCategoryQuery([
+          { id: 1, group_id: "group-1", name: "食費" },
         ]);
       }
 
@@ -88,6 +101,8 @@ describe("Admin Page", () => {
     expect(screen.getByLabelText("分類を登録するグループ")).toBeTruthy();
     expect(screen.getByLabelText("分類名")).toBeTruthy();
     expect(screen.getByRole("button", { name: "分類を登録" })).toBeTruthy();
+    expect(screen.getByText("分類一覧")).toBeTruthy();
+    expect(screen.getByDisplayValue("食費")).toBeTruthy();
     expect(screen.getAllByText("共有グループ").length).toBeGreaterThan(0);
     expect(screen.getAllByText("member@example.com").length).toBeGreaterThan(0);
   });
@@ -120,6 +135,10 @@ describe("Admin Page", () => {
 
       if (table === "group_members") {
         return { insert: memberInsertMock };
+      }
+
+      if (table === "categories") {
+        return createCategoryQuery();
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -166,6 +185,10 @@ describe("Admin Page", () => {
         return { upsert: memberUpsertMock };
       }
 
+      if (table === "categories") {
+        return createCategoryQuery();
+      }
+
       throw new Error(`Unexpected table: ${table}`);
     });
 
@@ -210,7 +233,7 @@ describe("Admin Page", () => {
       }
 
       if (table === "categories") {
-        return { insert: categoryInsertMock };
+        return createCategoryQuery([], { insert: categoryInsertMock });
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -229,5 +252,84 @@ describe("Admin Page", () => {
         name: "交通費",
       });
     });
+  });
+
+  test("分類名を更新できる", async () => {
+    const categoryEqMock = vi.fn(async () => ({ error: null }));
+    const categoryUpdateMock = vi.fn(() => ({ eq: categoryEqMock }));
+
+    fromMock.mockImplementation((table: string) => {
+      if (table === "users") {
+        return createSelectQuery([
+          { id: "admin-user", email: "admin@example.com", display_name: "Admin", role: "admin" },
+        ]);
+      }
+
+      if (table === "groups") {
+        return createSelectQuery([
+          { id: "group-1", name: "共有グループ", created_by: "admin-user" },
+        ]);
+      }
+
+      if (table === "categories") {
+        return createCategoryQuery(
+          [{ id: 1, group_id: "group-1", name: "食費" }],
+          { update: categoryUpdateMock },
+        );
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    render(<Page />);
+
+    fireEvent.change(await screen.findByDisplayValue("食費"), {
+      target: { value: "外食" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "分類を更新" }));
+
+    await waitFor(() => {
+      expect(categoryUpdateMock).toHaveBeenCalledWith({ name: "外食" });
+    });
+    expect(categoryEqMock).toHaveBeenCalledWith("id", 1);
+  });
+
+  test("分類を削除できる", async () => {
+    const categoryEqMock = vi.fn(async () => ({ error: null }));
+    const categoryDeleteMock = vi.fn(() => ({ eq: categoryEqMock }));
+
+    fromMock.mockImplementation((table: string) => {
+      if (table === "users") {
+        return createSelectQuery([
+          { id: "admin-user", email: "admin@example.com", display_name: "Admin", role: "admin" },
+        ]);
+      }
+
+      if (table === "groups") {
+        return createSelectQuery([
+          { id: "group-1", name: "共有グループ", created_by: "admin-user" },
+        ]);
+      }
+
+      if (table === "categories") {
+        return createCategoryQuery(
+          [{ id: 1, group_id: "group-1", name: "食費" }],
+          { delete: categoryDeleteMock },
+        );
+      }
+
+      throw new Error(`Unexpected table: ${table}`);
+    });
+
+    render(<Page />);
+
+    await screen.findByDisplayValue("食費");
+    fireEvent.click(screen.getByRole("button", { name: "分類を削除" }));
+
+    await waitFor(() => {
+      expect(categoryDeleteMock).toHaveBeenCalled();
+    });
+    expect(categoryEqMock).toHaveBeenCalledWith("id", 1);
+    expect(screen.queryByDisplayValue("食費")).toBeNull();
   });
 });

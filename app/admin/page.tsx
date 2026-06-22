@@ -6,15 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAppContext } from "@/components/custom/AppContext";
 import { supabase } from "@/lib/supabaseClient";
-import type { Group, UserProfile } from "@/types";
+import type { Category, Group, UserProfile } from "@/types";
 
 type AdminUser = Pick<UserProfile, "id" | "email" | "display_name" | "role">;
 type AdminGroup = Pick<Group, "id" | "name" | "created_by">;
+type AdminCategory = Pick<Category, "id" | "group_id" | "name">;
 
 export default function Page() {
   const { isAuthenticated, loading, profile } = useAppContext();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [groups, setGroups] = useState<AdminGroup[]>([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [groupName, setGroupName] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [selectedCategoryGroupId, setSelectedCategoryGroupId] = useState("");
@@ -27,7 +29,7 @@ export default function Page() {
   const isAdmin = profile?.role === "admin";
 
   const loadAdminData = async () => {
-    const [usersResult, groupsResult] = await Promise.all([
+    const [usersResult, groupsResult, categoriesResult] = await Promise.all([
       supabase
         .from("users")
         .select("id, email, display_name, role")
@@ -36,18 +38,24 @@ export default function Page() {
         .from("groups")
         .select("id, name, created_by")
         .order("created_at", { ascending: false }),
+      supabase
+        .from("categories")
+        .select("id, group_id, name")
+        .order("name", { ascending: true }),
     ]);
 
-    if (usersResult.error || groupsResult.error) {
+    if (usersResult.error || groupsResult.error || categoriesResult.error) {
       setMessage("管理データの読み込みに失敗しました。");
       return;
     }
 
     const nextUsers = (usersResult.data ?? []) as AdminUser[];
     const nextGroups = (groupsResult.data ?? []) as AdminGroup[];
+    const nextCategories = (categoriesResult.data ?? []) as AdminCategory[];
 
     setUsers(nextUsers);
     setGroups(nextGroups);
+    setCategories(nextCategories);
     setSelectedUserId((current) => current || nextUsers[0]?.id || "");
     setSelectedGroupId((current) => current || nextGroups[0]?.id || "");
     setSelectedCategoryGroupId((current) => current || nextGroups[0]?.id || "");
@@ -62,6 +70,11 @@ export default function Page() {
   const userById = useMemo(
     () => new Map(users.map((user) => [user.id, user])),
     [users],
+  );
+
+  const groupById = useMemo(
+    () => new Map(groups.map((group) => [group.id, group])),
+    [groups],
   );
 
   const createGroup = async (event: FormEvent<HTMLFormElement>) => {
@@ -151,7 +164,7 @@ export default function Page() {
     setIsSaving(true);
     setMessage("");
 
-    const { error } = await supabase
+    const { data: category, error } = await supabase
       .from("categories")
       .insert({
         group_id: selectedCategoryGroupId,
@@ -168,7 +181,69 @@ export default function Page() {
     }
 
     setCategoryName("");
+    if (category) {
+      setCategories((current) => [...current, category as AdminCategory]);
+    }
     setMessage("分類を登録しました。");
+  };
+
+  const changeCategoryName = (categoryId: number, name: string) => {
+    setCategories((current) =>
+      current.map((category) =>
+        category.id === categoryId ? { ...category, name } : category,
+      ),
+    );
+  };
+
+  const updateCategory = async (category: AdminCategory) => {
+    const trimmedName = category.name.trim();
+    if (!trimmedName) {
+      return;
+    }
+
+    setIsSaving(true);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("categories")
+      .update({ name: trimmedName })
+      .eq("id", category.id);
+
+    setIsSaving(false);
+
+    if (error) {
+      setMessage("分類更新に失敗しました。");
+      return;
+    }
+
+    setCategories((current) =>
+      current.map((currentCategory) =>
+        currentCategory.id === category.id
+          ? { ...currentCategory, name: trimmedName }
+          : currentCategory,
+      ),
+    );
+    setMessage("分類を更新しました。");
+  };
+
+  const deleteCategory = async (categoryId: number) => {
+    setIsSaving(true);
+    setMessage("");
+
+    const { error } = await supabase
+      .from("categories")
+      .delete()
+      .eq("id", categoryId);
+
+    setIsSaving(false);
+
+    if (error) {
+      setMessage("分類削除に失敗しました。");
+      return;
+    }
+
+    setCategories((current) => current.filter((category) => category.id !== categoryId));
+    setMessage("分類を削除しました。");
   };
 
   if (loading) {
@@ -241,6 +316,57 @@ export default function Page() {
             分類を登録
           </Button>
         </form>
+      </section>
+
+      <section className="grid gap-4">
+        <h2 className="text-lg font-medium">分類一覧</h2>
+        <div className="overflow-x-auto rounded border">
+          <table className="w-full min-w-[640px] text-sm">
+            <thead className="bg-muted text-left">
+              <tr>
+                <th className="px-3 py-2 font-medium">グループ</th>
+                <th className="px-3 py-2 font-medium">分類名</th>
+                <th className="px-3 py-2 font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((category) => (
+                <tr key={category.id} className="border-t">
+                  <td className="px-3 py-2">
+                    {groupById.get(category.group_id)?.name ?? category.group_id}
+                  </td>
+                  <td className="px-3 py-2">
+                    <Input
+                      aria-label={`分類名 ${category.id}`}
+                      value={category.name}
+                      onChange={(event) => changeCategoryName(category.id, event.target.value)}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isSaving || !category.name.trim()}
+                        onClick={() => void updateCategory(category)}
+                      >
+                        分類を更新
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={isSaving}
+                        onClick={() => void deleteCategory(category.id)}
+                      >
+                        分類を削除
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="grid gap-4 rounded border p-4">
