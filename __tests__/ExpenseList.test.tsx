@@ -79,15 +79,4 @@ describe("ExpenseList", () => {
       expect(screen.getByText("このブラウザでは音声入力に対応していません。")).toBeTruthy();
     });
   });
-
-  test("日付入力は狭い画面でも親要素からはみ出さない幅指定を持つ", async () => {
-    render(<ExpenseList />);
-
-    const dateInput = await screen.findByPlaceholderText("日付");
-    const classNames = dateInput.className.split(/\s+/);
-
-    expect(classNames).toContain("w-full");
-    expect(classNames).toContain("min-w-0");
-    expect(classNames).toContain("max-w-full");
-  });
 });

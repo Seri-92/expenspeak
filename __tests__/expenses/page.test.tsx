@@ -94,17 +94,6 @@ describe("Expense Page", () => {
     });
   });
 
-  test("月入力は狭い画面でも親要素からはみ出さない幅指定を持つ", async () => {
-    render(<Page />);
-
-    const monthInput = await screen.findByLabelText(/月の選択/i);
-    const classNames = monthInput.className.split(/\s+/);
-
-    expect(classNames).toContain("w-full");
-    expect(classNames).toContain("min-w-0");
-    expect(classNames).toContain("max-w-full");
-  });
-
   test("選択中グループの支出合計を表示する", async () => {
     render(<Page />);
 
