@@ -9,6 +9,26 @@ const categories = [
 const baseDate = new Date(2026, 5, 20);
 
 describe("parseVoiceExpense", () => {
+  test("分類、金額、日付、説明の順番で支出ドラフトを作る", () => {
+    expect(parseVoiceExpense("食費1200円昨日ランチ", categories, baseDate)).toMatchObject({
+      amount: 1200,
+      categoryId: 1,
+      date: "2026-06-19",
+      description: "ランチ",
+      missingFields: [],
+    });
+  });
+
+  test("分類から始まる順番で漢数字の金額を解釈する", () => {
+    expect(parseVoiceExpense("交通費四百八十円今日電車", categories, baseDate)).toMatchObject({
+      amount: 480,
+      categoryId: 2,
+      date: "2026-06-20",
+      description: "電車",
+      missingFields: [],
+    });
+  });
+
   test("空白なしの発話から支出ドラフトを作る", () => {
     expect(parseVoiceExpense("今日ランチ1200円食費", categories, baseDate)).toMatchObject({
       amount: 1200,

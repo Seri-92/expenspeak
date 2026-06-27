@@ -161,6 +161,54 @@ function parseAmount(text: string) {
   return parseNumericAmount(text) ?? parseJapaneseAmount(text);
 }
 
+function parseLeadingNumericAmount(text: string): ParsedPart<number> | null {
+  const explicitMatch = text.match(
+    new RegExp(`^${AMOUNT_LABEL_PATTERN}[:：]?\\s*([0-9][0-9,]*)\\s*(?:円|えん)?`),
+  );
+  if (explicitMatch) {
+    return {
+      value: Number(explicitMatch[1].replace(/,/g, "")),
+      text: explicitMatch[0],
+    };
+  }
+
+  const yenMatch = text.match(/^([0-9][0-9,]*)\s*(?:円|えん)/);
+  if (yenMatch) {
+    return {
+      value: Number(yenMatch[1].replace(/,/g, "")),
+      text: yenMatch[0],
+    };
+  }
+
+  return null;
+}
+
+function parseLeadingJapaneseAmount(text: string): ParsedPart<number> | null {
+  const explicitMatch = text.match(
+    new RegExp(`^${AMOUNT_LABEL_PATTERN}[:：]?\\s*([〇零一二三四五六七八九十百千万壱弐参]+)\\s*(?:円|えん)?`),
+  );
+  if (explicitMatch) {
+    return {
+      value: parseJapaneseNumber(explicitMatch[1]),
+      text: explicitMatch[0],
+    };
+  }
+
+  const yenMatch = text.match(/^([〇零一二三四五六七八九十百千万壱弐参]+)\s*(?:円|えん)/);
+  if (yenMatch) {
+    return {
+      value: parseJapaneseNumber(yenMatch[1]),
+      text: yenMatch[0],
+    };
+  }
+
+  return null;
+}
+
+function parseLeadingAmount(text: string) {
+  return parseLeadingNumericAmount(text) ?? parseLeadingJapaneseAmount(text);
+}
+
 function buildDateResult(year: number, month: number, day: number, text: string) {
   return {
     value: formatDate(new Date(year, month - 1, day)),
@@ -168,7 +216,7 @@ function buildDateResult(year: number, month: number, day: number, text: string)
   };
 }
 
-function parseDate(text: string, baseDate: Date): ParsedPart<string> | null {
+function buildRelativeDateResult(baseDate: Date, text: string) {
   const relativeDates: Record<string, number> = {
     "一昨日": -2,
     "昨日": -1,
@@ -177,22 +225,26 @@ function parseDate(text: string, baseDate: Date): ParsedPart<string> | null {
     "明日": 1,
   };
 
+  return {
+    value: formatDate(moveDate(baseDate, relativeDates[text])),
+    text,
+  };
+}
+
+function parseDate(text: string, baseDate: Date): ParsedPart<string> | null {
   const explicitRelativeMatch = text.match(
     new RegExp(`${DATE_LABEL_PATTERN}[:：]?\\s*(一昨日|昨日|今日|本日|明日)`),
   );
   if (explicitRelativeMatch) {
     return {
-      value: formatDate(moveDate(baseDate, relativeDates[explicitRelativeMatch[1]])),
+      value: buildRelativeDateResult(baseDate, explicitRelativeMatch[1]).value,
       text: explicitRelativeMatch[0],
     };
   }
 
   const relativeMatch = text.match(/一昨日|昨日|今日|本日|明日/);
   if (relativeMatch) {
-    return {
-      value: formatDate(moveDate(baseDate, relativeDates[relativeMatch[0]])),
-      text: relativeMatch[0],
-    };
+    return buildRelativeDateResult(baseDate, relativeMatch[0]);
   }
 
   const yearMonthDayMatch = text.match(
@@ -222,6 +274,61 @@ function parseDate(text: string, baseDate: Date): ParsedPart<string> | null {
   const slashMonthDayMatch = text.match(
     new RegExp(`${DATE_LABEL_PATTERN}[:：]?\\s*(\\d{1,2})/(\\d{1,2})`),
   ) ?? text.match(/(\d{1,2})\/(\d{1,2})/);
+  if (slashMonthDayMatch) {
+    return buildDateResult(
+      baseDate.getFullYear(),
+      Number(slashMonthDayMatch[1]),
+      Number(slashMonthDayMatch[2]),
+      slashMonthDayMatch[0],
+    );
+  }
+
+  return null;
+}
+
+function parseLeadingDate(text: string, baseDate: Date): ParsedPart<string> | null {
+  const explicitRelativeMatch = text.match(
+    new RegExp(`^${DATE_LABEL_PATTERN}[:：]?\\s*(一昨日|昨日|今日|本日|明日)`),
+  );
+  if (explicitRelativeMatch) {
+    return {
+      value: buildRelativeDateResult(baseDate, explicitRelativeMatch[1]).value,
+      text: explicitRelativeMatch[0],
+    };
+  }
+
+  const relativeMatch = text.match(/^(一昨日|昨日|今日|本日|明日)/);
+  if (relativeMatch) {
+    return buildRelativeDateResult(baseDate, relativeMatch[0]);
+  }
+
+  const yearMonthDayMatch = text.match(
+    new RegExp(`^${DATE_LABEL_PATTERN}[:：]?\\s*(\\d{4})[-/](\\d{1,2})[-/](\\d{1,2})`),
+  ) ?? text.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+  if (yearMonthDayMatch) {
+    return buildDateResult(
+      Number(yearMonthDayMatch[1]),
+      Number(yearMonthDayMatch[2]),
+      Number(yearMonthDayMatch[3]),
+      yearMonthDayMatch[0],
+    );
+  }
+
+  const monthDayMatch = text.match(
+    new RegExp(`^${DATE_LABEL_PATTERN}[:：]?\\s*(\\d{1,2})月(\\d{1,2})日`),
+  ) ?? text.match(/^(\d{1,2})月(\d{1,2})日/);
+  if (monthDayMatch) {
+    return buildDateResult(
+      baseDate.getFullYear(),
+      Number(monthDayMatch[1]),
+      Number(monthDayMatch[2]),
+      monthDayMatch[0],
+    );
+  }
+
+  const slashMonthDayMatch = text.match(
+    new RegExp(`^${DATE_LABEL_PATTERN}[:：]?\\s*(\\d{1,2})/(\\d{1,2})`),
+  ) ?? text.match(/^(\d{1,2})\/(\d{1,2})/);
   if (slashMonthDayMatch) {
     return buildDateResult(
       baseDate.getFullYear(),
@@ -287,6 +394,22 @@ function parseCategory(text: string, categories: VoiceExpenseCategory[]): Parsed
   return null;
 }
 
+function parseLeadingCategory(text: string, categories: VoiceExpenseCategory[]): ParsedPart<number> | null {
+  const trimmedText = text.trimStart();
+  const leadingWhitespace = text.length - trimmedText.length;
+
+  for (const category of sortCategories(categories)) {
+    if (trimmedText.startsWith(category.name)) {
+      return {
+        value: category.id,
+        text: text.slice(0, leadingWhitespace) + category.name,
+      };
+    }
+  }
+
+  return null;
+}
+
 function cleanupDescription(text: string) {
   return text
     .replace(new RegExp(`${DATE_LABEL_PATTERN}|${AMOUNT_LABEL_PATTERN}|${CATEGORY_LABEL_PATTERN}|${MEMO_LABEL_PATTERN}`, "g"), "")
@@ -296,38 +419,58 @@ function cleanupDescription(text: string) {
     .trim();
 }
 
-export function parseVoiceExpense(
+interface VoiceExpenseParsedParts {
+  amount: ParsedPart<number> | null;
+  category: ParsedPart<number> | null;
+  date: ParsedPart<string> | null;
+  description: string;
+}
+
+function parseOrderedVoiceExpense(
   text: string,
   categories: VoiceExpenseCategory[],
-  baseDate = new Date(),
-): VoiceExpenseParseResult {
-  const normalizedText = normalizeSpeechText(text);
-  let remainingText = normalizedText;
-  const warnings: string[] = [];
-
-  const amount = parseAmount(normalizedText);
-  if (amount) {
-    remainingText = removeFirst(remainingText, amount.text);
+  baseDate: Date,
+): VoiceExpenseParsedParts | null {
+  const category = parseLeadingCategory(text, categories);
+  if (!category) {
+    return null;
   }
 
-  const date = parseDate(normalizedText, baseDate);
+  let remainingText = text.slice(category.text.length).trimStart();
+  const amount = parseLeadingAmount(remainingText);
+  if (!amount) {
+    return null;
+  }
+
+  remainingText = remainingText.slice(amount.text.length).trimStart();
+  const date = parseLeadingDate(remainingText, baseDate);
   if (date) {
-    remainingText = removeFirst(remainingText, date.text);
-  } else {
-    warnings.push("date_defaulted");
+    remainingText = remainingText.slice(date.text.length).trimStart();
   }
 
-  const category = parseCategory(remainingText, categories);
-  if (category) {
-    remainingText = removeFirst(remainingText, category.text);
-  }
+  return {
+    amount,
+    category,
+    date,
+    description: cleanupDescription(remainingText),
+  };
+}
 
-  const explicitMemo = parseExplicitMemo(normalizedText);
-  const description = explicitMemo || cleanupDescription(remainingText);
+function buildParseResult(
+  rawText: string,
+  parsedParts: VoiceExpenseParsedParts,
+  baseDate: Date,
+): VoiceExpenseParseResult {
+  const { amount, category, date, description } = parsedParts;
+  const warnings: string[] = [];
   const missingFields: VoiceExpenseMissingField[] = [];
 
   if (!amount) {
     missingFields.push("amount");
+  }
+
+  if (!date) {
+    warnings.push("date_defaulted");
   }
 
   if (!category) {
@@ -340,7 +483,7 @@ export function parseVoiceExpense(
   }
 
   return {
-    rawText: text,
+    rawText,
     amount: amount?.value ?? null,
     categoryId: category?.value ?? null,
     date: date?.value ?? formatDate(baseDate),
@@ -348,4 +491,47 @@ export function parseVoiceExpense(
     missingFields,
     warnings,
   };
+}
+
+export function parseVoiceExpense(
+  text: string,
+  categories: VoiceExpenseCategory[],
+  baseDate = new Date(),
+): VoiceExpenseParseResult {
+  const normalizedText = normalizeSpeechText(text);
+  const orderedExpense = parseOrderedVoiceExpense(normalizedText, categories, baseDate);
+  if (orderedExpense) {
+    return buildParseResult(text, orderedExpense, baseDate);
+  }
+
+  let remainingText = normalizedText;
+
+  const amount = parseAmount(normalizedText);
+  if (amount) {
+    remainingText = removeFirst(remainingText, amount.text);
+  }
+
+  const date = parseDate(normalizedText, baseDate);
+  if (date) {
+    remainingText = removeFirst(remainingText, date.text);
+  }
+
+  const category = parseCategory(remainingText, categories);
+  if (category) {
+    remainingText = removeFirst(remainingText, category.text);
+  }
+
+  const explicitMemo = parseExplicitMemo(normalizedText);
+  const description = explicitMemo || cleanupDescription(remainingText);
+
+  return buildParseResult(
+    text,
+    {
+      amount,
+      category,
+      date,
+      description,
+    },
+    baseDate,
+  );
 }

@@ -265,6 +265,9 @@ export default function ExpenseList() {
                 {isListening ? <MicOff /> : <Mic />}
                 {isListening ? "停止" : "音声入力"}
               </Button>
+              <p className="text-xs text-muted-foreground">
+                話す順番: 分類 → 金額 → 日付 → 説明
+              </p>
               {voiceTranscript ? (
                 <p className="text-sm text-muted-foreground">認識: {voiceTranscript}</p>
               ) : null}

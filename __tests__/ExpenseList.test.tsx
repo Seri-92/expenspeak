@@ -79,4 +79,10 @@ describe("ExpenseList", () => {
       expect(screen.getByText("このブラウザでは音声入力に対応していません。")).toBeTruthy();
     });
   });
+
+  test("音声入力の発話順を表示する", async () => {
+    render(<ExpenseList />);
+
+    expect(await screen.findByText("話す順番: 分類 → 金額 → 日付 → 説明")).toBeTruthy();
+  });
 });
