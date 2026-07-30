@@ -275,20 +275,6 @@ export default function ExpenseList() {
                 <p className="text-sm text-muted-foreground">{voiceMessage}</p>
               ) : null}
             </div>
-            <Input
-              type="number"
-              placeholder="金額"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-            />
-            <Input
-              type="date"
-              placeholder="日付"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              required
-            />
             <Select
               value={selectedCategory?.toString()}
               onValueChange={(value) => setSelectedCategory(Number(value))}
@@ -304,6 +290,20 @@ export default function ExpenseList() {
                 ))}
               </SelectContent>
             </Select>
+            <Input
+              type="number"
+              placeholder="金額"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
+            <Input
+              type="date"
+              placeholder="日付"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+            />
             <Input
               type="text"
               placeholder="説明"

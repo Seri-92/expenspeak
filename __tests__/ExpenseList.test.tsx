@@ -85,4 +85,17 @@ describe("ExpenseList", () => {
 
     expect(await screen.findByText("話す順番: 分類 → 金額 → 日付 → 説明")).toBeTruthy();
   });
+
+  test("フォームを分類、金額、日付、説明の順に表示する", async () => {
+    render(<ExpenseList />);
+
+    const categorySelect = await screen.findByRole("combobox");
+    const amountInput = screen.getByPlaceholderText("金額");
+    const dateInput = screen.getByPlaceholderText("日付");
+    const descriptionInput = screen.getByPlaceholderText("説明");
+
+    expect(categorySelect.compareDocumentPosition(amountInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(amountInput.compareDocumentPosition(dateInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(dateInput.compareDocumentPosition(descriptionInput) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
