@@ -24,6 +24,12 @@ export default function AppHeader() {
       <Button asChild variant="ghost" className="text-base font-medium">
         <Link href="/expenses">支出一覧</Link>
       </Button>
+      <Button asChild variant="ghost" className="text-base font-medium">
+        <Link href="/incomes">収入</Link>
+      </Button>
+      <Button asChild variant="ghost" className="text-base font-medium">
+        <Link href="/monthly-allocation">取り分</Link>
+      </Button>
       {profile?.role === "admin" ? (
         <Button asChild variant="ghost" className="text-base font-medium">
           <Link href="/admin">管理</Link>

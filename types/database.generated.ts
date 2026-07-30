@@ -138,6 +138,54 @@ export type Database = {
           },
         ];
       };
+      monthly_incomes: {
+        Row: {
+          amount: number;
+          created_at: string;
+          created_by: string;
+          group_id: string;
+          id: string;
+          recipient: "創平" | "優希";
+          target_month: string;
+          updated_at: string;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string;
+          created_by: string;
+          group_id: string;
+          id?: string;
+          recipient: "創平" | "優希";
+          target_month: string;
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          created_by?: string;
+          group_id?: string;
+          id?: string;
+          recipient?: "創平" | "優希";
+          target_month?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "monthly_incomes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "monthly_incomes_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       groups: {
         Row: {
           created_at: string;
