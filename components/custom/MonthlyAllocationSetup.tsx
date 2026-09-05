@@ -62,7 +62,7 @@ export default function MonthlyAllocationSetup({ groupId, onConfigured }: {
     }
   }
 
-  return <section className="space-y-4 rounded-xl border bg-white p-6">
+  return <section className="space-y-4 border-t border-neutral-200 py-6">
     <h2 className="text-xl font-semibold">集計する分類の初期設定</h2>
     <p className="text-sm text-muted-foreground">SSYの支出から、生活費として差し引く3つの分類を選んでください。設定は翌月以降も使用します。</p>
     {loading ? <p role="status">分類を読み込み中…</p> : <form onSubmit={save} className="space-y-4">
@@ -74,7 +74,7 @@ export default function MonthlyAllocationSetup({ groupId, onConfigured }: {
           {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
         </select>
       </div>)}
-      <Button disabled={saving || !categories.length} type="submit">{saving ? "保存中…" : "この3分類で集計を始める"}</Button>
+      <Button variant="outline" className="border-neutral-300 bg-white text-neutral-700 shadow-none hover:bg-neutral-50" disabled={saving || !categories.length} type="submit">{saving ? "保存中…" : "この3分類で集計を始める"}</Button>
       <p className="text-sm text-muted-foreground">分類が不足している場合は、管理者が<Link href="/admin" className="underline">管理画面</Link>でSSYに分類を追加してください。</p>
     </form>}
     {error && <div role="alert" className="space-y-2 text-sm text-red-700"><p>{error}</p><Button variant="outline" onClick={() => setRetry((n) => n + 1)}>分類を再読み込み</Button></div>}

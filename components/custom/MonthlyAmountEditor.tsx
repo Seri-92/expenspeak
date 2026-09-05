@@ -67,15 +67,16 @@ export default function MonthlyAmountEditor(props: Props) {
   }
 
   return (
-    <form onSubmit={save} noValidate className="space-y-3 rounded-xl border bg-white p-4">
+    <form onSubmit={save} noValidate className="space-y-3 border-t border-neutral-200 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label htmlFor={id} className="text-base font-medium">{label}</Label>
-        <span className={`text-xs ${record ? "text-emerald-700" : "text-amber-700"}`}>
+        <Label htmlFor={id} className="text-sm font-medium">{label}</Label>
+        <span className="text-xs text-neutral-500">
           {record ? `保存済み ${formatYen(record.amount)}` : "未入力"}
         </span>
       </div>
       <div className="flex items-center gap-2">
         <Input id={id} type="text" inputMode="numeric" value={value} disabled={saving}
+          className="border-neutral-300 bg-white shadow-none focus-visible:ring-neutral-400"
           aria-describedby={`${id}-status`} aria-invalid={Boolean(error)} placeholder="例: 300000"
           onChange={(event) => { setValue(event.target.value); setMessage(""); setError(""); }} />
         <span className="text-sm text-muted-foreground">円</span>
@@ -83,11 +84,11 @@ export default function MonthlyAmountEditor(props: Props) {
       <p id={`${id}-status`} className="text-xs text-muted-foreground">
         {dirty ? "未保存の変更があります。集計には保存済みの金額を使用します。" : "0円も入力できます。空欄は未入力です。"}
       </p>
-      <Button type="submit" variant="outline" disabled={saving || !userId} className="h-auto w-full whitespace-normal py-2">
+      <Button type="submit" variant="outline" disabled={saving || !userId} className="h-auto w-full whitespace-normal border-neutral-300 bg-white py-2 text-neutral-700 shadow-none hover:bg-neutral-50">
         {saving ? "保存中…" : saveLabel}
       </Button>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <p role="status" className="text-sm text-emerald-700">{message}</p>
+      <p role="status" className="text-sm text-neutral-600">{message}</p>
     </form>
   );
 }

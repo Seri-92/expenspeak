@@ -41,34 +41,36 @@ export default function Page() {
   const group = settings ? groups.find((item) => item.id === settings.group_id) : groups.find((item) => item.name === "SSY");
   const { expenseMonth } = getAllocationPeriod(month);
 
-  return <main className="container mx-auto max-w-4xl space-y-6 px-4 py-8 sm:py-10">
+  return <main className="container mx-auto max-w-3xl space-y-8 px-4 py-8 text-neutral-900 sm:py-12">
     <header>
-      <h1 className="text-3xl font-bold tracking-tight text-slate-900">月次集計</h1>
-      <p className="mt-2 text-sm text-slate-600">受け取った月の手取りで、その前月の生活費を精算します。</p>
-      {group && <p className="mt-2 text-sm font-medium">集計対象: {group.name}</p>}
+      <h1 className="text-2xl font-semibold tracking-tight">月次集計</h1>
+      <p className="mt-2 text-sm text-neutral-600">受け取った月の手取りで、その前月の生活費を精算します。</p>
+      {group && <p className="mt-2 text-xs text-neutral-500">集計対象: {group.name}</p>}
     </header>
-    <section aria-label="集計する期間" className="rounded-2xl border bg-white p-4 sm:p-6">
-      <Label htmlFor="allocation-month" className="text-base font-medium">手取りを受け取った月（集計月）</Label>
-      <Input id="allocation-month" type="month" min="1900-01" max="9998-12" value={month} className="mt-2 max-w-xs"
+    <section aria-label="集計する期間" className="space-y-5">
+      <div>
+      <Label htmlFor="allocation-month" className="text-sm font-medium">手取りを受け取った月（集計月）</Label>
+      <Input id="allocation-month" type="month" min="1900-01" max="9998-12" value={month} className="mt-2 max-w-xs border-neutral-300 bg-white shadow-none focus-visible:ring-neutral-400"
         onChange={(event) => {
           try { getAllocationPeriod(event.target.value); setMonth(event.target.value); } catch { /* 空欄などで現在の集計を変更しない */ }
         }} />
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <p className="text-xs font-semibold text-sky-800">収入 · 選択した月</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{formatMonth(month)}</p>
-          <p className="mt-1 text-sm text-slate-600">この月に受け取った二人の手取り</p>
+      </div>
+      <div className="grid grid-cols-2 gap-4 border-y border-neutral-200 py-5 sm:gap-8">
+        <div>
+          <p className="text-xs text-neutral-600">収入 · 選択した月</p>
+          <p className="mt-2 text-xl font-medium">{formatMonth(month)}</p>
+          <p className="mt-1 text-xs leading-relaxed text-neutral-500">この月に受け取った二人の手取り</p>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-xs font-semibold text-amber-800">差し引く生活費 · 前月</p>
-          <p className="mt-1 text-xl font-semibold text-slate-900">{formatMonth(expenseMonth)}</p>
-          <p className="mt-1 text-sm text-slate-600">この月の変動費 ＋ この月分の固定費</p>
+        <div className="border-l border-neutral-200 pl-4 sm:pl-8">
+          <p className="text-xs text-neutral-600">差し引く生活費 · 前月</p>
+          <p className="mt-2 text-xl font-medium">{formatMonth(expenseMonth)}</p>
+          <p className="mt-1 text-xs leading-relaxed text-neutral-500">この月の変動費 ＋ この月分の固定費</p>
         </div>
       </div>
-      <p className="mt-3 text-xs text-slate-500">生活費の月は自動で前月になります。月を切り替える前に、入力した金額を保存してください。</p>
+      <p className="text-xs leading-relaxed text-neutral-500">生活費の月は自動で前月になります。月を切り替える前に、入力した金額を保存してください。</p>
     </section>
     {appLoading ? <p role="status">読み込み中…</p>
-      : error ? <div role="alert" className="rounded-xl border border-red-200 p-6">
+      : error ? <div role="alert" className="border-t border-neutral-200 py-6">
         <p>集計設定の読み込みに失敗しました。</p>
         <Button variant="outline" className="mt-3" onClick={() => setRetry((n) => n + 1)}>再読み込み</Button>
       </div>
