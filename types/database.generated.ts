@@ -186,6 +186,53 @@ export type Database = {
           },
         ];
       };
+      monthly_fixed_costs: {
+        Row: {
+          id: string;
+          group_id: string;
+          target_month: string;
+          item: "家賃" | "電気代" | "ガス代" | "水道代" | "インターネット代";
+          amount: number;
+          created_by: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          target_month: string;
+          item: "家賃" | "電気代" | "ガス代" | "水道代" | "インターネット代";
+          amount: number;
+          created_by: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          target_month?: string;
+          item?: "家賃" | "電気代" | "ガス代" | "水道代" | "インターネット代";
+          amount?: number;
+          created_by?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          { foreignKeyName: "monthly_fixed_costs_group_id_fkey"; columns: ["group_id"]; isOneToOne: false; referencedRelation: "groups"; referencedColumns: ["id"]; },
+          { foreignKeyName: "monthly_fixed_costs_created_by_fkey"; columns: ["created_by"]; isOneToOne: false; referencedRelation: "users"; referencedColumns: ["id"]; },
+        ];
+      };
+      monthly_allocation_settings: {
+        Row: { group_id: string; food_category_id: number; supplies_category_id: number; work_category_id: number; created_at: string; };
+        Insert: { group_id: string; food_category_id: number; supplies_category_id: number; work_category_id: number; created_at?: string; };
+        Update: { group_id?: string; food_category_id?: number; supplies_category_id?: number; work_category_id?: number; created_at?: string; };
+        Relationships: [
+          { foreignKeyName: "monthly_allocation_settings_group_id_fkey"; columns: ["group_id"]; isOneToOne: true; referencedRelation: "groups"; referencedColumns: ["id"]; },
+          { foreignKeyName: "monthly_allocation_settings_food_category_id_group_id_fkey"; columns: ["food_category_id", "group_id"]; isOneToOne: false; referencedRelation: "categories"; referencedColumns: ["id", "group_id"]; },
+          { foreignKeyName: "monthly_allocation_settings_supplies_category_id_group_id_fkey"; columns: ["supplies_category_id", "group_id"]; isOneToOne: false; referencedRelation: "categories"; referencedColumns: ["id", "group_id"]; },
+          { foreignKeyName: "monthly_allocation_settings_work_category_id_group_id_fkey"; columns: ["work_category_id", "group_id"]; isOneToOne: false; referencedRelation: "categories"; referencedColumns: ["id", "group_id"]; },
+        ];
+      };
       groups: {
         Row: {
           created_at: string;

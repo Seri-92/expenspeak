@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import Page from "@/app/incomes/page";
 
@@ -21,8 +21,8 @@ function createMonthlyIncomesQuery() {
     eq: vi.fn(() => query),
     order: vi.fn(async () => ({
       data: [
-        { recipient: "創平", amount: 300_000 },
-        { recipient: "優希", amount: 220_000 },
+        { id: "sohei", recipient: "創平", amount: 300_000 },
+        { id: "yuki", recipient: "優希", amount: 220_000 },
       ],
       error: null,
     })),
@@ -51,11 +51,21 @@ describe("Income Page", () => {
     render(<Page />);
 
     expect(await screen.findByText("現在のグループ: SSY")).toBeTruthy();
-    expect((screen.getByLabelText("創平の手取り") as HTMLInputElement).value).toBe("300000");
-    expect((screen.getByLabelText("優希の手取り") as HTMLInputElement).value).toBe("220000");
+    expect((await screen.findByLabelText(/の創平の手取り$/) as HTMLInputElement).value).toBe("300000");
+    expect((screen.getByLabelText(/の優希の手取り$/) as HTMLInputElement).value).toBe("220000");
 
     await waitFor(() => {
       expect(fromMock).toHaveBeenCalledWith("monthly_incomes");
     });
+  });
+
+  test("受け取った月を変更すると、その月だけを読み込む", async () => {
+    const query = createMonthlyIncomesQuery();
+    fromMock.mockReturnValue(query);
+    render(<Page />);
+    await screen.findByLabelText(/の創平の手取り$/);
+    fireEvent.change(screen.getByLabelText("手取りを受け取った月"), { target: { value: "2026-08" } });
+    await screen.findByLabelText("2026年8月の創平の手取り");
+    expect(query.eq).toHaveBeenCalledWith("target_month", "2026-08-01");
   });
 });

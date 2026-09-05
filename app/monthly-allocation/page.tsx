@@ -2,154 +2,79 @@
 
 import { useEffect, useState } from "react";
 import { useAppContext } from "@/components/custom/AppContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import MonthlyAllocationDetails from "@/components/custom/MonthlyAllocationDetails";
+import MonthlyAllocationSetup from "@/components/custom/MonthlyAllocationSetup";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { calculateMonthlyAllocation, type MonthlyAllocation } from "@/lib/monthlyAllocation";
+import { formatMonth, getAllocationPeriod, getCurrentMonth } from "@/lib/monthlyAllocation";
+import type { AllocationSettings } from "@/lib/monthlyAllocationData";
 import { supabase } from "@/lib/supabaseClient";
-import type { IncomeRecipient } from "@/types";
-
-function getMonthRange(month: string) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const start = new Date(Date.UTC(year, monthNumber - 1, 1));
-  const end = new Date(Date.UTC(year, monthNumber, 0, 23, 59, 59, 999));
-
-  return { start: start.toISOString(), end: end.toISOString() };
-}
-
-function formatYen(amount: number) {
-  return `${amount.toLocaleString()} 円`;
-}
 
 export default function Page() {
-  const { groups, loading: appLoading } = useAppContext();
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [allocation, setAllocation] = useState<MonthlyAllocation | null>(null);
-  const [incomes, setIncomes] = useState<Record<IncomeRecipient, number | null>>({
-    創平: null,
-    優希: null,
-  });
-  const [loading, setLoading] = useState(true);
-  const ssyGroup = groups.find((group) => group.name === "SSY");
-  const ssyGroupId = ssyGroup?.id;
-
+  const { groups, loading: appLoading, session } = useAppContext();
+  const [month, setMonth] = useState(getCurrentMonth);
+  const [settingsList, setSettingsList] = useState<AllocationSettings[] | null>(null);
+  const [error, setError] = useState(false);
+  const [retry, setRetry] = useState(0);
+  const membershipKey = groups.map((group) => group.id).sort().join(",");
   useEffect(() => {
-    const fetchAllocation = async () => {
-      if (!ssyGroupId) {
-        setAllocation(null);
-        setLoading(false);
-        return;
+    if (appLoading) return;
+    let active = true;
+    setError(false);
+    setSettingsList(null);
+    async function load() {
+      try {
+        const result = await supabase.from("monthly_allocation_settings").select("*").order("created_at");
+        if (result.error) throw result.error;
+        if (active) setSettingsList(result.data ?? []);
+      } catch {
+        if (active) setError(true);
       }
+    }
+    void load();
+    return () => { active = false; };
+  }, [appLoading, membershipKey, retry]);
 
-      setLoading(true);
-      const { start, end } = getMonthRange(selectedMonth);
-      const [incomeResult, expenseResult] = await Promise.all([
-        supabase
-          .from("monthly_incomes")
-          .select("recipient, amount")
-          .eq("group_id", ssyGroupId)
-          .eq("target_month", `${selectedMonth}-01`)
-          .order("recipient", { ascending: true }),
-        supabase
-          .from("expenses")
-          .select("amount, category:categories!expenses_category_group_fkey(name)")
-          .eq("group_id", ssyGroupId)
-          .gte("date", start)
-          .lte("date", end)
-          .order("date", { ascending: true }),
-      ]);
+  const settings = settingsList?.find((item) => groups.some((group) => group.id === item.group_id && group.name === "SSY"))
+    ?? settingsList?.find((item) => groups.some((group) => group.id === item.group_id));
+  const group = settings ? groups.find((item) => item.id === settings.group_id) : groups.find((item) => item.name === "SSY");
+  const { expenseMonth } = getAllocationPeriod(month);
 
-      if (incomeResult.error || expenseResult.error) {
-        console.error("Error fetching monthly allocation:", incomeResult.error ?? expenseResult.error);
-        setAllocation(null);
-        setLoading(false);
-        return;
-      }
-
-      const nextIncomes: Record<IncomeRecipient, number | null> = { 創平: null, 優希: null };
-      for (const income of incomeResult.data ?? []) {
-        nextIncomes[income.recipient as IncomeRecipient] = income.amount;
-      }
-
-      const nonDateExpense = (expenseResult.data ?? []).reduce((total, expense) => {
-        const category = Array.isArray(expense.category) ? expense.category[0] : expense.category;
-        return category?.name === "デート" ? total : total + expense.amount;
-      }, 0);
-
-      setIncomes(nextIncomes);
-      setAllocation(
-        calculateMonthlyAllocation({
-          soheiIncome: nextIncomes.創平,
-          yukiIncome: nextIncomes.優希,
-          nonDateExpense,
-        }),
-      );
-      setLoading(false);
-    };
-
-    void fetchAllocation();
-  }, [selectedMonth, ssyGroupId]);
-
-  if (appLoading || loading) {
-    return <div className="container mx-auto px-4 py-8">読み込み中...</div>;
-  }
-
-  if (!ssyGroup) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        取り分を計算するには「SSY」グループに参加してください。
+  return <main className="container mx-auto max-w-4xl space-y-6 px-4 py-8 sm:py-10">
+    <header>
+      <h1 className="text-3xl font-bold tracking-tight text-slate-900">月次集計</h1>
+      <p className="mt-2 text-sm text-slate-600">受け取った月の手取りで、その前月の生活費を精算します。</p>
+      {group && <p className="mt-2 text-sm font-medium">集計対象: {group.name}</p>}
+    </header>
+    <section aria-label="集計する期間" className="rounded-2xl border bg-white p-4 sm:p-6">
+      <Label htmlFor="allocation-month" className="text-base font-medium">手取りを受け取った月（集計月）</Label>
+      <Input id="allocation-month" type="month" min="1900-01" max="9998-12" value={month} className="mt-2 max-w-xs"
+        onChange={(event) => {
+          try { getAllocationPeriod(event.target.value); setMonth(event.target.value); } catch { /* 空欄などで現在の集計を変更しない */ }
+        }} />
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+          <p className="text-xs font-semibold text-sky-800">収入 · 選択した月</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">{formatMonth(month)}</p>
+          <p className="mt-1 text-sm text-slate-600">この月に受け取った二人の手取り</p>
+        </div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-semibold text-amber-800">差し引く生活費 · 前月</p>
+          <p className="mt-1 text-xl font-semibold text-slate-900">{formatMonth(expenseMonth)}</p>
+          <p className="mt-1 text-sm text-slate-600">この月の変動費 ＋ この月分の固定費</p>
+        </div>
       </div>
-    );
-  }
-
-  if (!allocation) {
-    return <div className="container mx-auto px-4 py-8">取り分の読み込みに失敗しました。</div>;
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-2 text-center text-3xl font-bold text-gray-800">月ごとの取り分</h1>
-      <p className="mb-8 text-center text-sm text-muted-foreground">
-        SSY の手取り合計から、分類が「デート」以外の支出を引いて二等分します。
-      </p>
-      <Card className="mb-6">
-        <CardContent className="pt-6">
-          <Label htmlFor="allocation-month" className="mb-1 block text-sm font-medium text-gray-700">
-            月の選択
-          </Label>
-          <Input
-            id="allocation-month"
-            type="month"
-            value={selectedMonth}
-            onChange={(event) => setSelectedMonth(event.target.value)}
-            className="max-w-xs"
-          />
-        </CardContent>
-      </Card>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader><CardTitle>創平の手取り</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-semibold">{incomes.創平 === null ? "未入力" : formatYen(incomes.創平)}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>優希の手取り</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-semibold">{incomes.優希 === null ? "未入力" : formatYen(incomes.優希)}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>デート以外の支出</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-semibold">{formatYen(allocation.nonDateExpense)}</p></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>二人の取り分</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-semibold text-primary">各 {formatYen(allocation.sharePerPerson)}</p></CardContent>
-        </Card>
+      <p className="mt-3 text-xs text-slate-500">生活費の月は自動で前月になります。月を切り替える前に、入力した金額を保存してください。</p>
+    </section>
+    {appLoading ? <p role="status">読み込み中…</p>
+      : error ? <div role="alert" className="rounded-xl border border-red-200 p-6">
+        <p>集計設定の読み込みに失敗しました。</p>
+        <Button variant="outline" className="mt-3" onClick={() => setRetry((n) => n + 1)}>再読み込み</Button>
       </div>
-      <Card className="mt-6">
-        <CardHeader><CardTitle>計算式</CardTitle></CardHeader>
-        <CardContent className="text-muted-foreground">
-          ({formatYen(allocation.totalIncome)} − {formatYen(allocation.nonDateExpense)}) ÷ 2 = 各 {formatYen(allocation.sharePerPerson)}
-        </CardContent>
-      </Card>
-    </div>
-  );
+      : !settingsList ? <p role="status">集計設定を読み込み中…</p>
+      : !group ? <p>月次集計を利用するには「SSY」グループに参加してください。</p>
+      : !settings ? <MonthlyAllocationSetup key={group.id} groupId={group.id} onConfigured={(item) => setSettingsList((current) => [...(current ?? []), item])} />
+      : <MonthlyAllocationDetails key={settings.group_id + month} settings={settings} month={month} userId={session?.user.id ?? ""} />}
+  </main>;
 }

@@ -28,7 +28,7 @@ export default function AppHeader() {
         <Link href="/incomes">収入</Link>
       </Button>
       <Button asChild variant="ghost" className="text-base font-medium">
-        <Link href="/monthly-allocation">取り分</Link>
+        <Link href="/monthly-allocation">月次集計</Link>
       </Button>
       {profile?.role === "admin" ? (
         <Button asChild variant="ghost" className="text-base font-medium">
