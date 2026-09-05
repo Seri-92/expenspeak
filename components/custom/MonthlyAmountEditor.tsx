@@ -67,28 +67,36 @@ export default function MonthlyAmountEditor(props: Props) {
   }
 
   return (
-    <form onSubmit={save} noValidate className="space-y-3 border-t border-neutral-200 py-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Label htmlFor={id} className="text-sm font-medium">{label}</Label>
-        <span className="text-xs text-neutral-500">
-          {record ? `保存済み ${formatYen(record.amount)}` : "未入力"}
-        </span>
+    <form onSubmit={save} noValidate className="grid gap-3 px-4 py-5 sm:grid-cols-[minmax(0,1fr)_minmax(15rem,18rem)] sm:items-center sm:gap-x-6 sm:px-6">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <Label htmlFor={id} className="text-base font-semibold">{props.item}</Label>
+          <span className={`rounded border px-2 py-0.5 text-xs ${dirty || !record ? "border-neutral-300 bg-neutral-100 text-neutral-800" : "border-transparent text-neutral-600"}`}>
+            {dirty ? "未保存" : record ? "保存済み" : "未入力"}
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-neutral-600">
+          {formatMonth(month)}{props.kind === "income" ? "に受け取った手取り" : "分"}
+        </p>
       </div>
-      <div className="flex items-center gap-2">
-        <Input id={id} type="text" inputMode="numeric" value={value} disabled={saving}
-          className="border-neutral-300 bg-white shadow-none focus-visible:ring-neutral-400"
-          aria-describedby={`${id}-status`} aria-invalid={Boolean(error)} placeholder="例: 300000"
-          onChange={(event) => { setValue(event.target.value); setMessage(""); setError(""); }} />
-        <span className="text-sm text-muted-foreground">円</span>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="relative min-w-0 flex-1">
+          <Input id={id} type="text" inputMode="numeric" value={value} disabled={saving}
+            className="h-11 border-neutral-300 bg-white pr-9 text-right text-lg font-medium tabular-nums shadow-none focus-visible:ring-neutral-500"
+            aria-label={label} aria-describedby={`${id}-status`} aria-invalid={Boolean(error)} placeholder="0"
+            onChange={(event) => { setValue(event.target.value); setMessage(""); setError(""); }} />
+          <span aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-600">円</span>
+        </div>
+        <Button type="submit" variant="outline" aria-label={saving ? `${label}を保存中` : saveLabel} disabled={saving || !userId}
+          className="h-11 shrink-0 border-neutral-300 bg-white px-4 text-neutral-800 shadow-none hover:bg-neutral-100">
+          {saving ? "保存中…" : "保存"}
+        </Button>
       </div>
-      <p id={`${id}-status`} className="text-xs text-muted-foreground">
-        {dirty ? "未保存の変更があります。集計には保存済みの金額を使用します。" : "0円も入力できます。空欄は未入力です。"}
+      <p id={`${id}-status`} className={dirty ? "text-sm text-neutral-600 sm:col-span-2" : "sr-only"}>
+        {dirty ? `未保存の変更があります。集計には${record ? `保存済みの${formatYen(record.amount)}` : "未入力の状態"}が反映されています。` : "0円も入力できます。空欄は未入力です。"}
       </p>
-      <Button type="submit" variant="outline" disabled={saving || !userId} className="h-auto w-full whitespace-normal border-neutral-300 bg-white py-2 text-neutral-700 shadow-none hover:bg-neutral-50">
-        {saving ? "保存中…" : saveLabel}
-      </Button>
-      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-      <p role="status" className="text-sm text-neutral-600">{message}</p>
+      {error && <p role="alert" className="text-sm text-red-700 sm:col-span-2">{error}</p>}
+      <p role="status" className="text-sm text-neutral-600 empty:hidden sm:col-span-2">{message}</p>
     </form>
   );
 }

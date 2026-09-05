@@ -28,7 +28,7 @@ export default function MonthlyIncomeInputs({ groupId, month, userId }: { groupI
   }, [groupId, month, retry]);
   if (error) return <div role="alert">収入の読み込みに失敗しました。<Button variant="outline" onClick={() => setRetry((n) => n + 1)}>再読み込み</Button></div>;
   if (!records) return <p role="status">収入を読み込み中…</p>;
-  return <div className="grid gap-4 sm:grid-cols-2">
+  return <div className="divide-y divide-neutral-200 overflow-hidden rounded-xl border border-neutral-200 bg-white">
     {incomeRecipients.map((recipient) => <MonthlyAmountEditor key={recipient} kind="income" item={recipient}
       groupId={groupId} month={month} userId={userId} record={records[recipient] ?? null}
       onSaved={(record) => setRecords((current) => ({ ...current, [recipient]: record }))} />)}
