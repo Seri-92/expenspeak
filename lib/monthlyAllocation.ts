@@ -59,6 +59,12 @@ export interface MonthlyAllocationInput {
   variableExpense: number;
 }
 
+// 正なら優希から創平、負なら創平から優希に送る。
+export function calculateMonthlyTransfer(yukiIncome: number | null, sharePerPerson: number | null) {
+  if (yukiIncome === null || sharePerPerson === null) return null;
+  return yukiIncome - sharePerPerson;
+}
+
 export function calculateMonthlyAllocation({ incomes, fixedCosts, variableExpense }: MonthlyAllocationInput) {
   const sum = (values: (number | null)[]) => values.reduce<number>((total, value) => total + (value ?? 0), 0);
   const totalIncome = sum(incomes);

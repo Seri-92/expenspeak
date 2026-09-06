@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import {
-  calculateMonthlyAllocation, getAllocationPeriod, getCurrentMonth,
+  calculateMonthlyAllocation, calculateMonthlyTransfer, getAllocationPeriod, getCurrentMonth,
   parseMonthlyAmount, sumExpensesByCategory,
 } from "@/lib/monthlyAllocation";
 
@@ -40,6 +40,19 @@ test("名前の変更に影響されず、対象カテゴリIDだけを集計す
     { category_id: 1, amount: 100 }, { category_id: 1, amount: 200 },
     { category_id: 2, amount: 50 }, { category_id: 4, amount: 900 },
   ], [1, 2, 3])).toEqual({ 1: 300, 2: 50, 3: 0 });
+});
+
+describe("送金額（正なら優希から創平、負なら逆方向）", () => {
+  test.each([
+    [220000, 150000, 70000],
+    [150000, 150000, 0],
+    [100000, 150000, -50000],
+    [220000, 149999, 70001],
+    [null, 150000, null],
+    [220000, null, null],
+  ])("手取り %s 円、取り分 %s 円の場合は %s 円", (income, share, expected) => {
+    expect(calculateMonthlyTransfer(income, share)).toBe(expected);
+  });
 });
 
 describe("取り分", () => {

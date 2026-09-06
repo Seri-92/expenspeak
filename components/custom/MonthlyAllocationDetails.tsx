@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import MonthlyAmountEditor from "@/components/custom/MonthlyAmountEditor";
 import { Button } from "@/components/ui/button";
-import { allocationCategories, calculateMonthlyAllocation, fixedCostItems, formatMonth, formatYen, getAllocationPeriod, sumExpensesByCategory } from "@/lib/monthlyAllocation";
+import { allocationCategories, calculateMonthlyAllocation, calculateMonthlyTransfer, fixedCostItems, formatMonth, formatYen, getAllocationPeriod, sumExpensesByCategory } from "@/lib/monthlyAllocation";
 import { loadMonthlyAllocation, type AllocationSettings, type MonthlyAllocationData } from "@/lib/monthlyAllocationData";
 import { incomeRecipients } from "@/types";
 
@@ -41,6 +41,7 @@ export default function MonthlyAllocationDetails({ settings, month, userId }: {
     incomes: incomes.map((row) => row?.amount ?? null), fixedCosts: fixedCosts.map((row) => row?.amount ?? null),
     variableExpense: Object.values(totals).reduce((sum, amount) => sum + amount, 0),
   });
+  const transfer = calculateMonthlyTransfer(data.incomes.find((row) => row.recipient === "優希")?.amount ?? null, allocation.sharePerPerson);
   const missing = [
     ...incomeRecipients.filter((_, index) => !incomes[index]).map((recipient) => `${incomeLabel}の${recipient}の手取り`),
     ...fixedCostItems.filter((_, index) => !fixedCosts[index]).map((item) => `${expenseLabel}分の${item}`),
@@ -62,11 +63,17 @@ export default function MonthlyAllocationDetails({ settings, month, userId }: {
           {allocation.remainder > 0 && <p className="mt-2 text-sm text-neutral-500">1円単位で切り上げています。二人が負担した後の残額は1円です。</p>}
         </> : <>
           <div className="grid grid-cols-2 gap-4 sm:gap-6">
-            {incomeRecipients.map((recipient) => <div key={recipient} className="min-w-0 border-l border-neutral-300 pl-4 first:border-l-0 first:pl-0 sm:pl-6">
-              <h3 className="text-sm font-medium text-neutral-700">{recipient}の取り分</h3>
+            <div className="min-w-0">
+              <h3 className="text-sm font-medium text-neutral-700">取り分（1人あたり）</h3>
               <p className="mt-2 break-words text-2xl font-semibold tracking-tight tabular-nums sm:text-4xl">{formatYen(allocation.sharePerPerson!)}</p>
-            </div>)}
+            </div>
+            {transfer !== null && <div className="min-w-0 border-l border-neutral-300 pl-4 sm:pl-6">
+              <h3 className="text-sm font-medium text-neutral-700">送る金額{transfer > 0 ? "（優希 → 創平）" : transfer < 0 ? "（創平 → 優希）" : ""}</h3>
+              <p className="mt-2 break-words text-2xl font-semibold tracking-tight tabular-nums sm:text-4xl">{formatYen(Math.abs(transfer))}</p>
+              {transfer === 0 && <p className="mt-2 text-sm text-neutral-600">送金は不要です。</p>}
+            </div>}
           </div>
+          <p className="mt-4 text-sm text-neutral-600">生活費は創平が支払うため、優希の手取り − 取り分で精算します。差額が負の場合は創平から優希へ送ります。</p>
           {allocation.remainder > 0 && <p className="mt-4 text-sm text-neutral-500">1円単位で二等分した残額: {formatYen(allocation.remainder)}</p>}
         </>}
       </div>
