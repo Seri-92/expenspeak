@@ -62,15 +62,16 @@ export default function MonthlyAllocationDetails({ settings, month, userId }: {
           <p className="mt-3">1人あたりの負担額: {formatYen(allocation.burdenPerPerson)}</p>
           {allocation.remainder > 0 && <p className="mt-2 text-sm text-neutral-500">1円単位で切り上げています。二人が負担した後の残額は1円です。</p>}
         </> : <>
-          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 sm:gap-6">
             <div className="min-w-0">
-              <h3 className="text-sm font-medium text-neutral-700">取り分（1人あたり）</h3>
-              <p className="mt-2 break-words text-2xl font-semibold tracking-tight tabular-nums sm:text-4xl">{formatYen(allocation.sharePerPerson!)}</p>
+              <h3 className="text-sm font-medium text-neutral-700">取り分</h3>
+              <p className="mt-1 whitespace-nowrap text-sm text-neutral-600">1人あたり</p>
+              <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums sm:text-4xl">{formatYen(allocation.sharePerPerson!)}</p>
             </div>
-            {transfer !== null && <div className="min-w-0 border-l border-neutral-300 pl-4 sm:pl-6">
-              <h3 className="text-sm font-medium text-neutral-700">送る金額{transfer > 0 ? "（優希 → 創平）" : transfer < 0 ? "（創平 → 優希）" : ""}</h3>
-              <p className="mt-2 break-words text-2xl font-semibold tracking-tight tabular-nums sm:text-4xl">{formatYen(Math.abs(transfer))}</p>
-              {transfer === 0 && <p className="mt-2 text-sm text-neutral-600">送金は不要です。</p>}
+            {transfer !== null && <div className="min-w-0 border-t border-neutral-300 pt-4 min-[400px]:border-l min-[400px]:border-t-0 min-[400px]:pl-4 min-[400px]:pt-0 sm:pl-6">
+              <h3 className="text-sm font-medium text-neutral-700">送る金額</h3>
+              <p className="mt-1 whitespace-nowrap text-sm text-neutral-600">{transfer > 0 ? "優希 → 創平" : transfer < 0 ? "創平 → 優希" : "送金不要"}</p>
+              <p className="mt-2 whitespace-nowrap text-2xl font-semibold tracking-tight tabular-nums sm:text-4xl">{formatYen(Math.abs(transfer))}</p>
             </div>}
           </div>
           <p className="mt-4 text-sm text-neutral-600">生活費は創平が支払うため、優希の手取り − 取り分で精算します。差額が負の場合は創平から優希へ送ります。</p>

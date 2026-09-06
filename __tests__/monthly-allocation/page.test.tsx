@@ -47,10 +47,11 @@ test("当月の手取りと前月の生活費を年月付きで区別して表�
   expect(screen.getByRole("heading", { name: "2026年7月の変動費" })).toBeTruthy();
   expect(screen.getByRole("heading", { name: "2026年7月分の固定費" })).toBeTruthy();
   expect(screen.getAllByText("150,000 円")).toHaveLength(1);
-  expect(screen.getByRole("heading", { name: "取り分（1人あたり）" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "取り分" })).toBeTruthy();
   expect(screen.queryByText("創平の取り分")).toBeNull();
   expect(screen.queryByText("優希の取り分")).toBeNull();
-  expect(screen.getByRole("heading", { name: "送る金額（優希 → 創平）" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "送る金額" })).toBeTruthy();
+  expect(screen.getByText("優希 → 創平")).toBeTruthy();
   expect(screen.getByText("70,000 円")).toBeTruthy();
   expect(screen.getByText("集計対象: SSY")).toBeTruthy();
   expect(loadMock).toHaveBeenLastCalledWith(settings, "2026-08");
@@ -68,7 +69,7 @@ test("入力不足は0円で計算せず、年月付きの不足項目を示す"
   expect(screen.getByText("2026年8月の優希の手取り", { selector: "li" })).toBeTruthy();
   expect(screen.getByText("2026年7月分の水道代", { selector: "li" })).toBeTruthy();
   expect(screen.queryByText("150,000 円")).toBeNull();
-  expect(screen.queryByRole("heading", { name: "送る金額（優希 → 創平）" })).toBeNull();
+  expect(screen.queryByRole("heading", { name: "送る金額" })).toBeNull();
 });
 
 test("保存後に取り分を更新し、他の項目の入力途中の値を保持する", async () => {
@@ -81,6 +82,7 @@ test("保存後に取り分を更新し、他の項目の入力途中の値を�
   fireEvent.change(screen.getByLabelText("2026年8月の優希の手取り"), { target: { value: "220000" } });
   fireEvent.click(screen.getByRole("button", { name: "優希の2026年8月の手取りを保存" }));
   await waitFor(() => expect(screen.getAllByText("150,000 円")).toHaveLength(1));
+  expect(screen.getByText("優希 → 創平")).toBeTruthy();
   expect(screen.getByText("70,000 円")).toBeTruthy();
   expect(rent.value).toBe("105000");
 });
@@ -128,13 +130,14 @@ test("グループが改名されても設定済みのIDで集計する", async 
 });
 
 test.each([
-  [480000, "送る金額（創平 → 優希）", "20,000 円"],
-  [440000, "送る金額", "送金は不要です。"],
-])("差額に応じて送金方向を表示する（創平の手取り %s 円）", async (income, heading, result) => {
+  [480000, "創平 → 優希", "20,000 円"],
+  [440000, "送金不要", "0 円"],
+])("差額に応じて送金方向を表示する（創平の手取り %s 円）", async (income, direction, result) => {
   const monthly = data();
   monthly.incomes[0].amount = income;
   loadMock.mockResolvedValue(monthly);
   await august();
-  expect(screen.getByRole("heading", { name: heading })).toBeTruthy();
-  expect(screen.getByText(result)).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "送る金額" })).toBeTruthy();
+  expect(screen.getByText(direction)).toBeTruthy();
+  expect(screen.getByText(result, { selector: "p" })).toBeTruthy();
 });
